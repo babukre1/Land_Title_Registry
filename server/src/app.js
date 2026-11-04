@@ -1,0 +1,40 @@
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import { env } from "./config/env.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import healthRoutes from "./routes/health.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import permissionRoutes from "./routes/permission.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
+import districtRoutes from "./routes/district.routes.js";
+import ownerRoutes from "./routes/owner.routes.js";
+import parcelRoutes from "./routes/parcel.routes.js";
+import disputeRoutes from "./routes/dispute.routes.js";
+
+export function createApp() {
+  const app = express();
+  app.disable("x-powered-by");
+  app.use(helmet());
+  app.use(cors({ origin: env.CLIENT_URL, credentials: true, methods: ["GET", "POST", "PATCH", "OPTIONS"], allowedHeaders: ["Content-Type", "X-CSRF-Token"] }));
+  app.use(express.json({ limit: "1mb" }));
+  app.use(cookieParser());
+  app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: env.NODE_ENV === "test" ? 1000 : 300, standardHeaders: "draft-8", legacyHeaders: false }));
+  app.use("/api/health", healthRoutes);
+  app.use("/api/auth", authRoutes);
+  app.use("/api/users", userRoutes);
+  app.use("/api/permissions", permissionRoutes);
+  app.use("/api/dashboard", dashboardRoutes);
+  app.use("/api/districts", districtRoutes);
+  app.use("/api/owners", ownerRoutes);
+  app.use("/api/parcels", parcelRoutes);
+  app.use("/api/disputes", disputeRoutes);
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+  return app;
+}
+
+export default createApp();

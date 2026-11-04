@@ -1,0 +1,40 @@
+{
+  "name": "land-title-registry-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "check": "npm run prisma:validate && npm test",
+    "prisma:validate": "prisma validate --config prisma7.config.ts",
+    "prisma:generate": "prisma generate --config prisma7.config.ts",
+    "prisma:migrate": "prisma migrate dev --config prisma7.config.ts",
+    "prisma:deploy": "prisma migrate deploy --config prisma7.config.ts",
+    "prisma:studio": "prisma studio --config prisma7.config.ts",
+    "db:seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "bcrypt": "6.0.0",
+    "cookie-parser": "1.4.7",
+    "cors": "2.8.5",
+    "dotenv": "17.2.3",
+    "express": "5.1.0",
+    "express-rate-limit": "8.7.2",
+    "helmet": "8.1.0",
+    "jsonwebtoken": "9.0.2",
+    "pg": "8.16.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "prisma": "7.10.1",
+    "supertest": "7.1.4",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

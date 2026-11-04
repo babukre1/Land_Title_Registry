@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://registry:registry_ci_password@localhost:5432/land_title_registry_test
+      TEST_DATABASE_URL: postgresql://registry:registry_ci_password@localhost:5432/land_title_registry_test
+      JWT_SECRET: ci-only-jwt-secret-longer-than-thirty-two-characters
+      JWT_EXPIRES_IN: 8h
+      CLIENT_URL: http://localhost:5173
+      DEMO_PASSWORD: CI-Demo-Password!2026
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+            server/package-lock.json
+      - name: Install PostgreSQL and PostGIS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgis
+          sudo service postgresql start
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE USER registry WITH PASSWORD 'registry_ci_password' CREATEDB;"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE land_title_registry_test OWNER registry;"
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix server
+          npm ci --prefix client
+      - name: Validate and generate Prisma Client
+        working-directory: server
+        run: |
+          npm run prisma:validate
+          npm run prisma:generate
+      - name: Apply migrations and seed isolated test database
+        working-directory: server
+        run: |
+          npm run prisma:deploy
+          npm run db:seed
+      - name: Test server
+        working-directory: server
+        run: npm test
+      - name: Build client
+        working-directory: client
+        run: npm run build

@@ -1,0 +1,534 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OwnerType {
+  PERSON
+  COMPANY
+}
+
+enum LandUse {
+  RESIDENTIAL
+  COMMERCIAL
+  FARM
+}
+
+enum ParcelStatus {
+  PENDING_SURVEY
+  VERIFIED
+  REGISTERED
+  RETURNED_FOR_CORRECTION
+  DISPUTED
+}
+
+enum SurveyStatus {
+  PENDING
+  IN_PROGRESS
+  VERIFIED
+  CANNOT_VERIFY
+}
+
+enum TransferType {
+  SALE
+  INHERITANCE
+  GIFT
+  COURT_ORDER
+}
+
+enum TransferStatus {
+  AWAITING_OWNER_CONSENT
+  AWAITING_BUYER_ACCEPTANCE
+  CLERK_REVIEW
+  AWAITING_PAYMENT
+  REGISTRAR_REVIEW
+  APPROVED
+  CANCELLED
+  REJECTED
+}
+
+enum ConsentStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+}
+
+enum OwnershipEventType {
+  REGISTRATION
+  SALE
+  INHERITANCE
+  GIFT
+  COURT_ORDER
+  CORRECTION
+}
+
+enum EncumbranceType {
+  MORTGAGE
+  COURT_HOLD
+}
+
+enum EncumbranceStatus {
+  ACTIVE
+  LIFTED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+}
+
+enum CertificateStatus {
+  CURRENT
+  SUPERSEDED
+  INVALID
+}
+
+enum PaymentMethod {
+  EVC_PLUS
+  ZAAD
+  EDAHAB
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum SmsStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum CandidateStatus {
+  PENDING
+  BLOCKED
+  ACCEPTED
+  WITHDRAWN
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(30)
+  description String   @db.VarChar(300)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                         Int                @id @default(autoincrement())
+  fullName                   String             @map("full_name") @db.VarChar(150)
+  email                      String             @unique @db.VarChar(255)
+  passwordHash               String             @map("password_hash") @db.VarChar(255)
+  phone                      String?            @db.VarChar(30)
+  roleId                     Int                @map("role_id")
+  isActive                   Boolean            @default(true) @map("is_active")
+  createdAt                  DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                  DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  role                       Role               @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  owner                      Owner?
+  createdParcels             Parcel[]           @relation("ParcelCreator")
+  approvedParcels            Parcel[]           @relation("ParcelApprover")
+  surveys                    Survey[]           @relation("Surveyor")
+  initiatedTransfers         Transfer[]         @relation("TransferInitiator")
+  clerkReviewedTransfers     Transfer[]         @relation("TransferClerk")
+  registrarApprovedTransfers Transfer[]         @relation("TransferRegistrar")
+  approvedHistory            OwnershipHistory[] @relation("HistoryApprover")
+  createdEncumbrances        Encumbrance[]      @relation("EncumbranceCreator")
+  liftedEncumbrances         Encumbrance[]      @relation("EncumbranceLifter")
+  openedDisputes             Dispute[]          @relation("DisputeOpener")
+  resolvedDisputes           Dispute[]          @relation("DisputeResolver")
+  issuedCertificates         Certificate[]      @relation("CertificateIssuer")
+  updatedFeeSettings         FeeSetting[]       @relation("FeeSettingUpdater")
+  uploadedDocuments          Document[]         @relation("DocumentUploader")
+  auditLogs                  AuditLog[]
+  parcelCandidates           ParcelCandidate[]  @relation("CandidateCreator")
+  disputePartiesAdded        DisputeParty[]     @relation("DisputePartyRecorder")
+
+  @@index([roleId])
+  @@map("users")
+}
+
+model District {
+  id               Int               @id @default(autoincrement())
+  name             String            @db.VarChar(100)
+  code             String            @db.VarChar(10)
+  regionName       String            @map("region_name") @db.VarChar(100)
+  regionCode       String            @map("region_code") @db.VarChar(10)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  nextParcelNumber Int               @default(1) @map("next_parcel_number")
+  parcels          Parcel[]
+  candidates       ParcelCandidate[]
+
+  @@unique([regionCode, code])
+  @@map("districts")
+}
+
+model Owner {
+  id                 Int               @id @default(autoincrement())
+  ownerType          OwnerType         @map("owner_type")
+  fullName           String?           @map("full_name") @db.VarChar(150)
+  companyName        String?           @map("company_name") @db.VarChar(200)
+  identityNumber     String?           @unique @map("identity_number") @db.VarChar(80)
+  registrationNumber String?           @unique @map("registration_number") @db.VarChar(80)
+  phone              String?           @db.VarChar(30)
+  email              String?           @db.VarChar(255)
+  address            String?           @db.VarChar(300)
+  userId             Int?              @unique @map("user_id")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user               User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parcelOwners       ParcelOwner[]
+  purchases          Transfer[]        @relation("TransferBuyer")
+  transferConsents   TransferConsent[]
+  disputeParties     DisputeParty[]
+
+  @@map("owners")
+}
+
+model Parcel {
+  id                 Int                                   @id @default(autoincrement())
+  parcelNumber       String                                @unique @map("parcel_number") @db.VarChar(40)
+  registrationKey    String?                               @unique @map("registration_key") @db.VarChar(80)
+  districtId         Int                                   @map("district_id")
+  areaName           String                                @map("area_name") @db.VarChar(150)
+  landUse            LandUse                               @map("land_use")
+  geometry           Unsupported("geometry(Polygon,4326)")
+  areaM2             Decimal                               @map("area_m2") @db.Decimal(14, 2)
+  status             ParcelStatus                          @default(PENDING_SURVEY)
+  createdById        Int                                   @map("created_by_id")
+  approvedById       Int?                                  @map("approved_by_id")
+  approvedAt         DateTime?                             @map("approved_at") @db.Timestamptz(3)
+  createdAt          DateTime                              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime                              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  district           District                              @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  createdBy          User                                  @relation("ParcelCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy         User?                                 @relation("ParcelApprover", fields: [approvedById], references: [id], onDelete: Restrict)
+  owners             ParcelOwner[]
+  surveys            Survey[]
+  transfers          Transfer[]
+  history            OwnershipHistory[]
+  encumbrances       Encumbrance[]
+  disputeParcels     DisputeParcel[]
+  certificates       Certificate[]
+  candidateConflicts CandidateConflict[]
+
+  @@index([districtId, status])
+  @@index([geometry], type: Gist)
+  @@map("parcels")
+}
+
+model ParcelOwner {
+  id           Int      @id @default(autoincrement())
+  parcelId     Int      @map("parcel_id")
+  ownerId      Int      @map("owner_id")
+  sharePercent Decimal  @map("share_percent") @db.Decimal(5, 2)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  parcel       Parcel   @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  owner        Owner    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@unique([parcelId, ownerId])
+  @@index([ownerId])
+  @@map("parcel_owners")
+}
+
+model Document {
+  id              Int               @id @default(autoincrement())
+  originalName    String            @map("original_name") @db.VarChar(255)
+  storedName      String            @unique @map("stored_name") @db.VarChar(255)
+  mimeType        String            @map("mime_type") @db.VarChar(120)
+  filePath        String            @map("file_path") @db.VarChar(500)
+  uploadedById    Int               @map("uploaded_by_id")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  uploadedBy      User              @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  surveyReports   Survey[]          @relation("SurveyReportDocument")
+  liftingEvidence Encumbrance[]     @relation("LiftingDocument")
+  disputeLinks    DisputeDocument[]
+
+  @@index([uploadedById])
+  @@map("documents")
+}
+
+model Survey {
+  id                 Int          @id @default(autoincrement())
+  parcelId           Int          @map("parcel_id")
+  surveyorId         Int?         @map("surveyor_id")
+  status             SurveyStatus @default(PENDING)
+  reportDocumentId   Int?         @map("report_document_id")
+  notes              String?
+  cannotVerifyReason String?      @map("cannot_verify_reason")
+  verifiedAt         DateTime?    @map("verified_at") @db.Timestamptz(3)
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  parcel             Parcel       @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  surveyor           User?        @relation("Surveyor", fields: [surveyorId], references: [id], onDelete: Restrict)
+  reportDocument     Document?    @relation("SurveyReportDocument", fields: [reportDocumentId], references: [id], onDelete: Restrict)
+
+  @@index([parcelId, status])
+  @@index([surveyorId, status])
+  @@map("surveys")
+}
+
+model Transfer {
+  id                    Int                @id @default(autoincrement())
+  parcelId              Int                @map("parcel_id")
+  initiatedById         Int                @map("initiated_by_id")
+  buyerOwnerId          Int                @map("buyer_owner_id")
+  transferType          TransferType       @map("transfer_type")
+  declaredPrice         Decimal?           @map("declared_price") @db.Decimal(14, 2)
+  status                TransferStatus     @default(AWAITING_OWNER_CONSENT)
+  buyerAcceptedAt       DateTime?          @map("buyer_accepted_at") @db.Timestamptz(3)
+  clerkReviewedById     Int?               @map("clerk_reviewed_by_id")
+  clerkReviewedAt       DateTime?          @map("clerk_reviewed_at") @db.Timestamptz(3)
+  registrarApprovedById Int?               @map("registrar_approved_by_id")
+  registrarApprovedAt   DateTime?          @map("registrar_approved_at") @db.Timestamptz(3)
+  cancellationReason    String?            @map("cancellation_reason")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  parcel                Parcel             @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  initiatedBy           User               @relation("TransferInitiator", fields: [initiatedById], references: [id], onDelete: Restrict)
+  buyerOwner            Owner              @relation("TransferBuyer", fields: [buyerOwnerId], references: [id], onDelete: Restrict)
+  clerkReviewedBy       User?              @relation("TransferClerk", fields: [clerkReviewedById], references: [id], onDelete: Restrict)
+  registrarApprovedBy   User?              @relation("TransferRegistrar", fields: [registrarApprovedById], references: [id], onDelete: Restrict)
+  consents              TransferConsent[]
+  historyEvents         OwnershipHistory[]
+  payments              Payment[]
+
+  @@index([parcelId, status])
+  @@map("transfers")
+}
+
+model TransferConsent {
+  id            Int           @id @default(autoincrement())
+  transferId    Int           @map("transfer_id")
+  ownerId       Int           @map("owner_id")
+  consentStatus ConsentStatus @default(PENDING) @map("consent_status")
+  confirmedAt   DateTime?     @map("confirmed_at") @db.Timestamptz(3)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  transfer      Transfer      @relation(fields: [transferId], references: [id], onDelete: Restrict)
+  owner         Owner         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@unique([transferId, ownerId])
+  @@map("transfer_consents")
+}
+
+model OwnershipHistory {
+  id                Int                @id @default(autoincrement())
+  parcelId          Int                @map("parcel_id")
+  transferId        Int?               @map("transfer_id")
+  eventType         OwnershipEventType @map("event_type")
+  effectiveAt       DateTime           @map("effective_at") @db.Timestamptz(3)
+  price             Decimal?           @db.Decimal(14, 2)
+  approvedById      Int                @map("approved_by_id")
+  correctedEntryId  Int?               @map("corrected_entry_id")
+  ownershipSnapshot Json               @map("ownership_snapshot")
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  parcel            Parcel             @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  transfer          Transfer?          @relation(fields: [transferId], references: [id], onDelete: Restrict)
+  approvedBy        User               @relation("HistoryApprover", fields: [approvedById], references: [id], onDelete: Restrict)
+  correctedEntry    OwnershipHistory?  @relation("HistoryCorrections", fields: [correctedEntryId], references: [id], onDelete: Restrict)
+  corrections       OwnershipHistory[] @relation("HistoryCorrections")
+
+  @@index([parcelId, effectiveAt])
+  @@map("ownership_history")
+}
+
+model Encumbrance {
+  id                Int               @id @default(autoincrement())
+  parcelId          Int               @map("parcel_id")
+  type              EncumbranceType
+  status            EncumbranceStatus @default(ACTIVE)
+  bankName          String?           @map("bank_name") @db.VarChar(200)
+  mortgageAmount    Decimal?          @map("mortgage_amount") @db.Decimal(14, 2)
+  courtCaseNumber   String?           @map("court_case_number") @db.VarChar(100)
+  createdById       Int               @map("created_by_id")
+  liftedById        Int?              @map("lifted_by_id")
+  liftingReason     String?           @map("lifting_reason")
+  liftingDocumentId Int?              @map("lifting_document_id")
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  liftedAt          DateTime?         @map("lifted_at") @db.Timestamptz(3)
+  parcel            Parcel            @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  createdBy         User              @relation("EncumbranceCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  liftedBy          User?             @relation("EncumbranceLifter", fields: [liftedById], references: [id], onDelete: Restrict)
+  liftingDocument   Document?         @relation("LiftingDocument", fields: [liftingDocumentId], references: [id], onDelete: Restrict)
+
+  @@index([parcelId, status])
+  @@map("encumbrances")
+}
+
+model Dispute {
+  id           Int               @id @default(autoincrement())
+  description  String
+  status       DisputeStatus     @default(OPEN)
+  openedById   Int               @map("opened_by_id")
+  resolvedById Int?              @map("resolved_by_id")
+  resolution   String?
+  resolvedAt   DateTime?         @map("resolved_at") @db.Timestamptz(3)
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  openedBy     User              @relation("DisputeOpener", fields: [openedById], references: [id], onDelete: Restrict)
+  resolvedBy   User?             @relation("DisputeResolver", fields: [resolvedById], references: [id], onDelete: Restrict)
+  parcels      DisputeParcel[]
+  documents    DisputeDocument[]
+  candidate    ParcelCandidate?
+  parties      DisputeParty[]
+
+  @@index([status])
+  @@map("disputes")
+}
+
+model DisputeParty {
+  id           Int      @id @default(autoincrement())
+  disputeId    Int      @map("dispute_id")
+  ownerId      Int?     @map("owner_id")
+  displayName  String   @map("display_name") @db.VarChar(200)
+  partyRole    String   @map("party_role") @db.VarChar(40)
+  recordedById Int      @map("recorded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  dispute      Dispute  @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  owner        Owner?   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  recordedBy   User     @relation("DisputePartyRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@unique([disputeId, ownerId, partyRole])
+  @@index([disputeId])
+  @@map("dispute_parties")
+}
+
+model DisputeParcel {
+  id        Int     @id @default(autoincrement())
+  disputeId Int     @map("dispute_id")
+  parcelId  Int     @map("parcel_id")
+  dispute   Dispute @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  parcel    Parcel  @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+
+  @@unique([disputeId, parcelId])
+  @@map("dispute_parcels")
+}
+
+model DisputeDocument {
+  id         Int      @id @default(autoincrement())
+  disputeId  Int      @map("dispute_id")
+  documentId Int      @map("document_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  dispute    Dispute  @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  @@unique([disputeId, documentId])
+  @@map("dispute_documents")
+}
+
+model ParcelCandidate {
+  id               Int                                   @id @default(autoincrement())
+  proposedNumber   String?                               @map("proposed_number") @db.VarChar(40)
+  districtId       Int                                   @map("district_id")
+  areaName         String                                @map("area_name") @db.VarChar(150)
+  proposedGeometry Unsupported("geometry(Polygon,4326)") @map("proposed_geometry")
+  proposedAreaM2   Decimal                               @map("proposed_area_m2") @db.Decimal(14, 2)
+  landUse          LandUse                               @map("land_use")
+  ownerSnapshot    Json                                  @map("owner_snapshot")
+  idempotencyKey   String                                @unique @map("idempotency_key") @db.VarChar(80)
+  disputeId        Int?                                  @unique @map("dispute_id")
+  status           CandidateStatus                       @default(PENDING)
+  reason           String?
+  createdById      Int                                   @map("created_by_id")
+  createdAt        DateTime                              @default(now()) @map("created_at") @db.Timestamptz(3)
+  district         District                              @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  createdBy        User                                  @relation("CandidateCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  dispute          Dispute?                              @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  conflicts        CandidateConflict[]
+
+  @@index([proposedGeometry], type: Gist)
+  @@map("parcel_candidates")
+}
+
+model CandidateConflict {
+  id            Int             @id @default(autoincrement())
+  candidateId   Int             @map("candidate_id")
+  parcelId      Int             @map("parcel_id")
+  overlapAreaM2 Decimal         @map("overlap_area_m2") @db.Decimal(14, 2)
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  candidate     ParcelCandidate @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+  parcel        Parcel          @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+
+  @@unique([candidateId, parcelId])
+  @@map("candidate_conflicts")
+}
+
+model Certificate {
+  id                  Int               @id @default(autoincrement())
+  certificateNumber   String            @unique @map("certificate_number") @db.VarChar(80)
+  parcelId            Int               @map("parcel_id")
+  status              CertificateStatus @default(CURRENT)
+  issuedById          Int               @map("issued_by_id")
+  issuedAt            DateTime          @map("issued_at") @db.Timestamptz(3)
+  supersededAt        DateTime?         @map("superseded_at") @db.Timestamptz(3)
+  verificationToken   String            @unique @map("verification_token") @db.VarChar(128)
+  filePath            String            @map("file_path") @db.VarChar(500)
+  certificateSnapshot Json              @map("certificate_snapshot")
+  parcel              Parcel            @relation(fields: [parcelId], references: [id], onDelete: Restrict)
+  issuedBy            User              @relation("CertificateIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+
+  @@index([parcelId, status])
+  @@map("certificates")
+}
+
+model FeeSetting {
+  id             Int      @id @default(autoincrement())
+  percentageRate Decimal  @map("percentage_rate") @db.Decimal(5, 2)
+  minimumFee     Decimal  @map("minimum_fee") @db.Decimal(12, 2)
+  updatedById    Int      @map("updated_by_id")
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy      User     @relation("FeeSettingUpdater", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@map("fee_settings")
+}
+
+model Payment {
+  id              Int           @id @default(autoincrement())
+  transferId      Int           @map("transfer_id")
+  amount          Decimal       @db.Decimal(12, 2)
+  paymentMethod   PaymentMethod @map("payment_method")
+  status          PaymentStatus @default(PENDING)
+  referenceNumber String        @unique @map("reference_number") @db.VarChar(100)
+  paidAt          DateTime?     @map("paid_at") @db.Timestamptz(3)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  transfer        Transfer      @relation(fields: [transferId], references: [id], onDelete: Restrict)
+
+  @@index([transferId, status])
+  @@map("payments")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.VarChar(100)
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model SmsOutbox {
+  id             Int       @id @default(autoincrement())
+  recipientPhone String    @map("recipient_phone") @db.VarChar(30)
+  message        String
+  status         SmsStatus @default(PENDING)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  sentAt         DateTime? @map("sent_at") @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+  @@map("sms_outbox")
+}
