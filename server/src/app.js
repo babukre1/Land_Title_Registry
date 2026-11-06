@@ -14,6 +14,8 @@ import districtRoutes from "./routes/district.routes.js";
 import ownerRoutes from "./routes/owner.routes.js";
 import parcelRoutes from "./routes/parcel.routes.js";
 import disputeRoutes from "./routes/dispute.routes.js";
+import surveyRoutes from "./routes/survey.routes.js";
+import registrationRoutes from "./routes/registration.routes.js";
 
 export function createApp() {
   const app = express();
@@ -32,6 +34,8 @@ export function createApp() {
   app.use("/api/owners", ownerRoutes);
   app.use("/api/parcels", parcelRoutes);
   app.use("/api/disputes", disputeRoutes);
+  app.use("/api/surveys", surveyRoutes);
+  app.use("/api/registrations", registrationRoutes);
   app.use(notFoundHandler);
   app.use(errorHandler);
   return app;

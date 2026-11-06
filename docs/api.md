@@ -23,6 +23,15 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | POST | `/api/parcels` | Yes + CSRF | CLERK | Register pending parcel or preserve blocked candidate |
 | GET | `/api/disputes` | Yes | CLERK, REGISTRAR | List overlap disputes |
 | GET | `/api/disputes/:id` | Yes | CLERK, REGISTRAR | Candidate, parties, conflicts, and geometry |
+| GET | `/api/surveys` | Yes | SURVEYOR, CLERK, REGISTRAR | Filtered, paginated survey attempts |
+| GET | `/api/surveys/:id` | Yes | SURVEYOR, CLERK, REGISTRAR | Survey, parcel, owners, report metadata, and boundaries |
+| POST | `/api/surveys/:id/report` | Yes + CSRF | SURVEYOR | Private PDF/JPEG/PNG upload, maximum 10 MB |
+| GET | `/api/surveys/:id/report` | Yes | SURVEYOR, CLERK, REGISTRAR | Authorized report retrieval |
+| POST | `/api/surveys/:id/verify` | Yes + CSRF | SURVEYOR | Verify current or adjusted boundary |
+| POST | `/api/surveys/:id/cannot-verify` | Yes + CSRF | SURVEYOR | Preserve reason and return parcel to clerk |
+| PATCH | `/api/parcels/:id/correction` | Yes + CSRF | CLERK | Revalidate correction and create a new survey attempt |
+| GET | `/api/registrations/pending-approval` | Yes | REGISTRAR | Verified parcels awaiting approval |
+| POST | `/api/parcels/:id/approve` | Yes + CSRF | REGISTRAR | Atomic official registration and initial history |
 | GET | `/api/permissions/owner` | Yes | OWNER | Role-boundary demonstration |
 | GET | `/api/permissions/clerk` | Yes | CLERK | Role-boundary demonstration |
 | GET | `/api/permissions/surveyor` | Yes | SURVEYOR | Role-boundary demonstration |
@@ -73,4 +82,4 @@ An overlap greater than 1 m² returns `409` with code `PARCEL_OVERLAP`. The data
 
 ## Future API (not implemented)
 
-Survey decisions, legal approvals, transfers/consents/payments, dispute resolution, encumbrances, certificates, uploads, public certificate verification, and SMS processing are database-supported but intentionally remain outside Phases 4–6.
+Transfers/consents/payments, dispute resolution, encumbrances, certificates, general uploads, public certificate verification, and SMS processing remain outside Day 1.

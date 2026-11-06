@@ -18,6 +18,7 @@ export const parcelProposalSchema = z.object({
 }).strict();
 
 export const parcelRegistrationSchema = parcelProposalSchema.extend({ idempotencyKey: z.uuid() });
+export const parcelCorrectionSchema = parcelProposalSchema.omit({ idempotencyKey: true, confirmUnusualArea: true }).extend({ confirmUnusualArea: z.boolean().default(false) });
 export const parcelIdSchema = z.object({ id: z.coerce.number().int().positive() });
 export const parcelListSchema = z.object({
   q: z.string().trim().max(100).optional(),

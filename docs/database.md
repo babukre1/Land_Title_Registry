@@ -6,7 +6,7 @@
 - `owners`: legal people/companies, optionally linked one-to-one to an account.
 - `districts`, `parcels`: administrative location, atomic district number counter, idempotency key, and authoritative Polygon/4326 parcel records.
 - `parcel_owners`: many-to-many ownership with exact decimal shares.
-- `surveys`, `documents`: repeatable survey reviews and metadata-only evidence attachments.
+- `surveys`, `documents`: repeatable survey attempts, exact verified boundary/area, and metadata-only private evidence attachments.
 - `transfers`, `transfer_consents`, `payments`: future ownership-change workflow.
 - `ownership_history`: immutable legal snapshots for registration, transfer, and correction events.
 - `encumbrances`: active/lifted mortgage and court holds.
@@ -77,5 +77,7 @@ Each history row contains a JSON snapshot with owner IDs, display names, and sha
 ## Migration strategy
 
 `20261102000100_initial_registry/migration.sql` creates PostGIS first, then enums/tables/indexes/foreign keys and custom protections. `20261104000100_phase_4_6_registration/migration.sql` adds atomic counters, registration/candidate idempotency, owner snapshots, optional survey assignment, and dispute parties while initializing counters from existing numbers. `migration_lock.toml` declares PostgreSQL. Fresh databases use `prisma migrate deploy`; development schema changes use `prisma migrate dev`. `prisma db push` is not part of the workflow.
+
+`20261104000200_phase_7_survey_approval/migration.sql` adds document size, verified survey geometry/area, a verified-survey evidence constraint, and a partial unique index allowing only one initial `REGISTRATION` history event per parcel. Ownership history and audit triggers continue to reject updates and deletes.
 
 The repeatable seed uses upserts and conflict-safe inserts. It calculates parcel areas in PostgreSQL, hashes `DEMO_PASSWORD`, and never creates a registered parcel with incomplete shares.

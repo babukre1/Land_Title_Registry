@@ -1,4 +1,5 @@
-import { getParcel, getParcelGeoJson, listParcels, previewParcel, registerParcel } from "../services/parcel.service.js";
+import { correctReturnedParcel, getParcel, getParcelGeoJson, listParcels, previewParcel, registerParcel } from "../services/parcel.service.js";
+import { approveParcelRegistration } from "../services/registration.service.js";
 
 export async function preview(request, response) {
   response.status(200).json({ success: true, data: await previewParcel(request.validated.body) });
@@ -24,3 +25,5 @@ export async function index(request, response) {
 
 export async function show(request, response) { response.status(200).json({ success: true, data: await getParcel(request.validated.params.id, request.user) }); }
 export async function geojson(request, response) { response.status(200).json({ success: true, data: await getParcelGeoJson(request.user) }); }
+export async function correct(request, response) { response.json({ success: true, data: await correctReturnedParcel(request.validated.params.id, request.validated.body, request.user) }); }
+export async function approve(request, response) { const result = await approveParcelRegistration(request.validated.params.id, request.user); response.status(result.repeated ? 200 : 201).json({ success: true, repeated: result.repeated, data: result.parcel }); }

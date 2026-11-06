@@ -246,6 +246,7 @@ model Document {
   storedName      String            @unique @map("stored_name") @db.VarChar(255)
   mimeType        String            @map("mime_type") @db.VarChar(120)
   filePath        String            @map("file_path") @db.VarChar(500)
+  fileSize        Int               @map("file_size")
   uploadedById    Int               @map("uploaded_by_id")
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
   uploadedBy      User              @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
@@ -266,6 +267,8 @@ model Survey {
   notes              String?
   cannotVerifyReason String?      @map("cannot_verify_reason")
   verifiedAt         DateTime?    @map("verified_at") @db.Timestamptz(3)
+  verifiedGeometry   Unsupported("geometry(Polygon,4326)")? @map("verified_geometry")
+  verifiedAreaM2     Decimal?     @map("verified_area_m2") @db.Decimal(14, 2)
   createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
   parcel             Parcel       @relation(fields: [parcelId], references: [id], onDelete: Restrict)

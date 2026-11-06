@@ -131,3 +131,30 @@ export async function getParcelGeoJson(user) {
   `;
   return { type: "FeatureCollection", features: rows.map((row) => ({ type: "Feature", geometry: row.geometry, properties: { id: row.id, parcelNumber: row.parcelNumber, status: row.status, landUse: row.landUse } })) };
 }
+
+/** Revalidates an unapproved returned parcel and creates a fresh survey attempt. */
+export async function correctReturnedParcel(id, input, actor) {
+  const prisma = getPrisma();
+  await prisma.$transaction(async (transaction) => {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(${REGISTRATION_LOCK_KEY})`;
+    const parcel = await transaction.parcel.findUnique({ where: { id }, select: { id: true, status: true } });
+    if (!parcel) throw Object.assign(new Error("Parcel not found"), { status: 404 });
+    if (parcel.status !== "RETURNED_FOR_CORRECTION") throw Object.assign(new Error("Only a returned, unapproved parcel can be corrected"), { status: 409 });
+    const { district } = await loadRegistrationReferences(transaction, input.districtId, input.owners);
+    validateOwnershipShares(input.owners);
+    const geometry = normalizePolygon(input.geometry);
+    const validation = await validatePolygon(geometry, transaction);
+    if (!validation.isValid) throw Object.assign(new Error(`Invalid corrected boundary: ${validation.reason}`), { status: 422 });
+    const areaM2 = await calculateAreaM2(geometry, transaction);
+    const warning = areaWarning(areaM2);
+    if (warning && !input.confirmUnusualArea) throw Object.assign(new Error("Unusual parcel area requires explicit clerk confirmation"), { status: 422 });
+    const conflicts = await findParcelOverlaps(geometry, id, transaction);
+    if (conflicts.length) throw Object.assign(new Error("Corrected boundary overlaps protected land"), { status: 409, code: "PARCEL_OVERLAP", data: publicConflicts(conflicts) });
+    await transaction.$executeRaw`UPDATE parcels SET district_id=${district.id}, area_name=${input.areaName}, land_use=${input.landUse}::"LandUse", geometry=ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(geometry)}),4326), area_m2=${areaM2}, status='PENDING_SURVEY', updated_at=NOW() WHERE id=${id}`;
+    await transaction.parcelOwner.deleteMany({ where: { parcelId: id } });
+    await transaction.parcelOwner.createMany({ data: input.owners.map((owner) => ({ parcelId: id, ownerId: owner.ownerId, sharePercent: owner.sharePercent })) });
+    const survey = await transaction.survey.create({ data: { parcelId: id, status: "PENDING", notes: "Created after clerk correction." } });
+    await transaction.auditLog.create({ data: { userId: actor.id, action: "PARCEL_CORRECTED_AND_RESUBMITTED", entityType: "Parcel", entityId: String(id), details: { newSurveyId: survey.id, areaM2 } } });
+  }, { maxWait: 10000, timeout: 30000 });
+  return getParcel(id, actor);
+}

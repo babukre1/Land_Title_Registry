@@ -45,3 +45,7 @@ Unknown routes return 404. Validation returns 422. Authentication and authorizat
 ## Parcel registration concurrency
 
 Parcel registration runs in one PostgreSQL transaction guarded by a transaction-scoped advisory lock. Inside the lock it checks the idempotency key, validates references and exact ownership shares, asks PostGIS to validate and measure the polygon, and rechecks all protected statuses for overlap above 1 m². It then commits exactly one of two outcomes: a numbered `PENDING_SURVEY` parcel with an unassigned survey task, or a blocked candidate with an `OPEN` dispute and immutable conflict/party evidence. The critical check-and-insert window is serialized, so two simultaneous overlapping candidates cannot both pass.
+
+Survey verification reuses the same lock and spatial helpers. It preserves the exact verified geometry and area on the survey attempt, so registrar approval can prove the parcel boundary still matches field evidence. Registrar approval locks the parcel row, rechecks status, report, boundary equality, disputes, geometry, overlap, owners and exact shares, then atomically sets `REGISTERED`, appends one `REGISTRATION` history event, and audits the action. Any failure rolls back the entire approval.
+
+Survey report bytes are kept outside the web root. Only randomized filenames and validated metadata are stored in PostgreSQL; authenticated role-checked routes read the files.

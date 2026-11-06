@@ -5,7 +5,7 @@ const parcelListSelect = {
   status: true, createdAt: true,
   district: { select: { id: true, name: true, code: true, regionName: true, regionCode: true } },
   owners: { select: { sharePercent: true, owner: { select: { id: true, ownerType: true, fullName: true, companyName: true } } } },
-  surveys: { take: 1, orderBy: { createdAt: "desc" }, select: { status: true, createdAt: true } },
+  surveys: { take: 1, orderBy: { createdAt: "desc" }, select: { id: true, status: true, notes: true, cannotVerifyReason: true, verifiedAt: true, createdAt: true, surveyor: { select: { id: true, fullName: true } }, reportDocument: { select: { id: true, originalName: true, mimeType: true, fileSize: true } } } },
 };
 
 export async function findParcels(query, user, database = getPrisma()) {

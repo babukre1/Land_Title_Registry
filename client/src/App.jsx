@@ -15,6 +15,11 @@ import DisputesPage from "./pages/DisputesPage.jsx";
 import DisputeDetailPage from "./pages/DisputeDetailPage.jsx";
 import ComingSoonPage from "./pages/ComingSoonPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
+import SurveysPage from "./pages/SurveysPage.jsx";
+import SurveyDetailPage from "./pages/SurveyDetailPage.jsx";
+import RegistrationsPage from "./pages/RegistrationsPage.jsx";
+import RegistrationReviewPage from "./pages/RegistrationReviewPage.jsx";
+import ParcelCorrectionPage from "./pages/ParcelCorrectionPage.jsx";
 
 export default function App() {
   return (
@@ -29,6 +34,7 @@ export default function App() {
           <Route path="/parcels/:id" element={<ParcelDetailPage />} />
           <Route element={<ProtectedRoute allowedRoles={["CLERK"]} />}>
             <Route path="/parcels/new" element={<NewParcelPage />} />
+            <Route path="/parcels/:id/correction" element={<ParcelCorrectionPage />} />
             <Route path="/owners/new" element={<NewOwnerPage />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={["CLERK", "REGISTRAR", "ADMIN"]} />}>
@@ -40,7 +46,12 @@ export default function App() {
             <Route path="/disputes/:id" element={<DisputeDetailPage />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={["SURVEYOR", "CLERK", "REGISTRAR"]} />}>
-            <Route path="/surveys" element={<ComingSoonPage title="Surveys" />} />
+            <Route path="/surveys" element={<SurveysPage />} />
+            <Route path="/surveys/:id" element={<SurveyDetailPage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={["REGISTRAR"]} />}>
+            <Route path="/registrations/pending" element={<RegistrationsPage />} />
+            <Route path="/registrations/:id/review" element={<RegistrationReviewPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>

@@ -19,4 +19,12 @@
 
 Shared edges and shared corners have zero intersection area and are allowed. Overlap of 1 m² or less is also allowed; only overlap strictly greater than 1 m² blocks registration. Retrying the same idempotency key returns the original outcome.
 
-This phase stops at survey assignment. Survey decisions, registrar approval, title issuance, transfers, dispute resolution, and boundary correction are intentionally not implemented.
+## Survey and correction
+
+A surveyor opens the preserved survey attempt and uploads a private PDF/JPEG/PNG field report. Verification either keeps the boundary or validates, measures, and overlap-checks an adjustment. Success stores the exact verified geometry and moves both survey and parcel to `VERIFIED`. A conflicting adjustment creates candidate/dispute evidence and leaves the parcel unverified. Cannot Verify preserves the reason and returns the parcel; a clerk correction is fully revalidated and creates a new attempt without deleting the old one.
+
+## Registrar approval
+
+The registrar queue contains only verified parcels with reports. Approval uses the registry lock and a parcel row lock, verifies that the current and surveyed boundaries are equal, rechecks validity, overlap, open disputes and exact 100% ownership, then atomically registers the parcel, records registrar/time, appends the initial ownership snapshot, and audits the event. A partial unique database index and the service's idempotent response prevent duplicate initial history.
+
+Title certificate issuance, transfers, payments, encumbrances, dispute resolution, and approved post-registration boundary correction remain future work.

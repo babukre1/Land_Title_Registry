@@ -2,7 +2,7 @@
 
 A secure foundation for digital land registration and ownership management in Somalia. The system stores geographic parcel boundaries, separates account identities from legal owner identities, preserves permanent ownership history, and enforces five distinct server-side roles.
 
-This repository implements Day 1 Phases 1–6: the project/database/authentication foundation plus the operational dashboard, owner management, protected parcel registration, map-based overlap prevention, and automatic dispute evidence. Survey decisions, legal approval, transfers, and certificates remain later-phase work.
+This repository implements Day 1 Phases 1–8: the foundation, owner/parcel registration, protected spatial workflow, survey verification and correction, registrar approval, immutable initial ownership history, integration tests, and documentation. Transfers and certificates remain later-phase work.
 
 ## Technology versions
 
@@ -135,11 +135,13 @@ The repeatable seed creates these development-only accounts. Every account uses 
 - Parcel drawing/manual coordinates, PostGIS preview, authoritative registration, lists, details, and GeoJSON maps
 - Atomic district parcel numbering, pending survey creation, idempotent submission, and concurrent-safe overlap enforcement
 - Persisted blocked candidates, conflict geometry, dispute parties, and dispute list/detail maps
+- Private PDF/JPEG/PNG survey reports with signature validation and a 10 MB limit
+- Survey queues, field verification, boundary adjustment, Cannot Verify, clerk correction, and preserved survey attempts
+- Registrar review and atomic approval with duplicate protection and immutable initial ownership history
 - Unit/integration tests and CI workflow
 
 ## Not implemented yet
 
-- Survey decisions and registrar approval workflows
 - Transfer, consent, fee/payment, dispute resolution, encumbrance, certificate, document-upload, and SMS workflows
 - Complete translation of every workflow message beyond the bilingual application shell
 
@@ -150,6 +152,7 @@ The database and focused services support these future workflows, but the applic
 - Prisma 7 treats PostGIS geometry as `Unsupported`, so spatial values must be read/written with carefully parameterized raw SQL. Ordinary Prisma queries should explicitly select non-geometry fields.
 - Authentication cannot operate until `DATABASE_URL` and `JWT_SECRET` are configured; the public health endpoint intentionally remains available for diagnosis.
 - Leaflet uses OpenStreetMap tiles, so the base map requires an internet connection; coordinate entry and all server-side spatial enforcement still work without map tiles.
+- Survey reports use private local backend storage for the demonstration. Production needs encrypted durable storage, backups, malware scanning, retention policy, and multi-instance coordination.
 - The cookie maximum age is eight hours; keep it aligned if `JWT_EXPIRES_IN` is changed.
 
 ## Assumptions

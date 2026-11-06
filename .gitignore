@@ -5,6 +5,7 @@ coverage/
 .env.*
 !.env.example
 server/src/generated/
+server/storage/
 *.log
 .DS_Store
 .idea/
