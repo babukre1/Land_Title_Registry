@@ -15,12 +15,14 @@ function DrawingControls({ value, onChange }) {
       draw: {
         polygon: {
           allowIntersection: false,
-          showArea: true,
+          // leaflet-draw 1.0.4 throws from its live area formatter in strict
+          // mode, leaving the mouse marker disabled after a vertex is added.
+          showArea: false,
           // An open SVG path is visually filled as soon as it has three points.
           // That fill can cover Leaflet Draw's invisible mouse marker and turn
           // later clicks into map drags. Keep only the outline while drawing;
           // the completed polygon is filled in the CREATED handler below.
-          shapeOptions: { fill: false },
+          shapeOptions: { fill: false, interactive: false },
         },
         polyline: false,
         rectangle: false,
