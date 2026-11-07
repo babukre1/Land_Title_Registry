@@ -1,15 +1,14 @@
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { getPrisma } from "../lib/prisma.js";
 import { getLinkedOwner, validateOwnershipShares } from "./ownership.service.js";
+import { deleteObject, loadObject, storeObject } from "./object-storage.service.js";
 
 const REGISTRY_LOCK_KEY = 8092026;
 const FINAL_STATUSES = ["APPROVED", "CANCELLED", "REJECTED"];
 const STAFF_ROLES = new Set(["CLERK", "REGISTRAR", "ADMIN"]);
-const uploadRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../storage/transfer-documents");
 const ownerDisplay = { id: true, ownerType: true, fullName: true, companyName: true };
 const transferSelect = {
   id: true, transferType: true, declaredPrice: true, sellerSnapshot: true, status: true, buyerAcceptedAt: true, buyerRejectedAt: true,
@@ -148,12 +147,19 @@ export async function saveTransferDocument(id, file, actor) {
   if (!base) throw httpError("Transfer not found", 404); await assertParticipant(base, actor, prisma);
   if (FINAL_STATUSES.includes(base.status)) throw httpError("Finalized transfers do not accept documents");
   const extension = file.mimetype === "application/pdf" ? ".pdf" : file.mimetype === "image/png" ? ".png" : ".jpg";
-  const storedName = `${randomUUID()}${extension}`; await mkdir(uploadRoot, { recursive: true }); const filePath = path.join(uploadRoot, storedName); await writeFile(filePath, file.buffer, { flag: "wx" });
-  const document = await prisma.$transaction(async (transaction) => {
-    const created = await transaction.document.create({ data: { originalName: path.basename(file.originalname).slice(0, 255), storedName, mimeType: file.mimetype, filePath, fileSize: file.size, uploadedById: actor.id } });
-    await transaction.transferDocument.create({ data: { transferId: id, documentId: created.id } });
-    await transaction.auditLog.create({ data: { userId: actor.id, action: "TRANSFER_DOCUMENT_UPLOADED", entityType: "Transfer", entityId: String(id), details: { documentId: created.id, mimeType: file.mimetype, fileSize: file.size } } }); return created;
-  });
+  const storedName = `${randomUUID()}${extension}`;
+  const filePath = await storeObject({ category: "transfer-documents", storedName, buffer: file.buffer, mimeType: file.mimetype });
+  let document;
+  try {
+    document = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.document.create({ data: { originalName: path.basename(file.originalname).slice(0, 255), storedName, mimeType: file.mimetype, filePath, fileSize: file.size, uploadedById: actor.id } });
+      await transaction.transferDocument.create({ data: { transferId: id, documentId: created.id } });
+      await transaction.auditLog.create({ data: { userId: actor.id, action: "TRANSFER_DOCUMENT_UPLOADED", entityType: "Transfer", entityId: String(id), details: { documentId: created.id, mimeType: file.mimetype, fileSize: file.size } } }); return created;
+    });
+  } catch (error) {
+    await deleteObject(filePath).catch(() => {});
+    throw error;
+  }
   return { id: document.id, originalName: document.originalName, mimeType: document.mimeType, fileSize: document.fileSize };
 }
 
@@ -161,7 +167,9 @@ export async function getTransferDocument(id, documentId, actor) {
   const prisma = getPrisma(); const base = await prisma.transfer.findUnique({ where: { id }, select: { id: true, buyerOwnerId: true, initiatedById: true, sellerSnapshot: true } });
   if (!base) throw httpError("Transfer not found", 404); await assertParticipant(base, actor, prisma);
   const link = await prisma.transferDocument.findUnique({ where: { transferId_documentId: { transferId: id, documentId } }, select: { document: { select: { originalName: true, mimeType: true, filePath: true } } } });
-  if (!link) throw httpError("Transfer document not found", 404); return { ...link.document, buffer: await readFile(link.document.filePath) };
+  if (!link) throw httpError("Transfer document not found", 404);
+  const stored = await loadObject(link.document.filePath);
+  return { ...link.document, buffer: stored || await readFile(link.document.filePath) };
 }
 
 export async function reviewTransferDocuments(id, input, actor) {

@@ -73,7 +73,14 @@ DATABASE_URL=postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/land_title_regi
 TEST_DATABASE_URL=postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/land_title_registry_test
 JWT_SECRET=a-random-value-of-at-least-32-characters
 DEMO_PASSWORD=a-local-demo-password-at-least-8-characters
+R2_ACCOUNT_ID=your-cloudflare-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
+R2_BUCKET_NAME=land-title-registry-documents
+R2_OBJECT_PREFIX=land-title-registry
 ```
+
+Survey reports and transfer evidence are stored in a private Cloudflare R2 bucket. Create an R2 API token restricted to that bucket with **Object Read & Write** permission. Keep the bucket private; the authenticated API streams documents to authorized users. `R2_OBJECT_PREFIX` is optional and defaults to `land-title-registry`.
 
 Create both databases with your own PostgreSQL administrator account. Do not point `TEST_DATABASE_URL` at development or production; integration tests refuse any database whose name does not end in `_test`.
 
@@ -136,7 +143,7 @@ The repeatable seed creates these development-only accounts. Every account uses 
 - Parcel drawing/manual coordinates, PostGIS preview, authoritative registration, lists, details, and GeoJSON maps
 - Atomic district parcel numbering, pending survey creation, idempotent submission, and concurrent-safe overlap enforcement
 - Persisted blocked candidates, conflict geometry, dispute parties, and dispute list/detail maps
-- Private PDF/JPEG/PNG survey reports with signature validation and a 10 MB limit
+- Private Cloudflare R2-backed PDF/JPEG/PNG survey reports with signature validation and a 10 MB limit
 - Survey queues, field verification, boundary adjustment, Cannot Verify, clerk correction, and preserved survey attempts
 - Registrar review and atomic approval with duplicate protection and immutable initial ownership history
 - Unit/integration tests and CI workflow
@@ -159,7 +166,7 @@ The database and focused services support these future workflows, but the applic
 - Prisma 7 treats PostGIS geometry as `Unsupported`, so spatial values must be read/written with carefully parameterized raw SQL. Ordinary Prisma queries should explicitly select non-geometry fields.
 - Authentication cannot operate until `DATABASE_URL` and `JWT_SECRET` are configured; the public health endpoint intentionally remains available for diagnosis.
 - Leaflet uses OpenStreetMap tiles, so the base map requires an internet connection; coordinate entry and all server-side spatial enforcement still work without map tiles.
-- Survey reports use private local backend storage for the demonstration. Production needs encrypted durable storage, backups, malware scanning, retention policy, and multi-instance coordination.
+- Uploaded evidence is stored in private Cloudflare R2 object storage. Production still needs a documented retention policy, malware scanning, and tested backup/recovery procedures.
 - The cookie maximum age is eight hours; keep it aligned if `JWT_EXPIRES_IN` is changed.
 
 ## Assumptions

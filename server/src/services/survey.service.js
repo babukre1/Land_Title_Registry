@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { getPrisma } from "../lib/prisma.js";
 import { calculateAreaM2, findParcelOverlaps, normalizePolygon, validatePolygon } from "./geometry.service.js";
+import { deleteObject, loadObject, storeObject } from "./object-storage.service.js";
 
-const uploadRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../storage/survey-reports");
 const REGISTRY_LOCK_KEY = 8092026;
 const surveySelect = {
   id: true, status: true, notes: true, cannotVerifyReason: true, verifiedAt: true, createdAt: true, updatedAt: true,
@@ -54,15 +53,19 @@ export async function saveSurveyReport(id, file, actor) {
   if (!["PENDING", "IN_PROGRESS"].includes(survey.status)) throw Object.assign(new Error("This survey attempt no longer accepts reports"), { status: 409 });
   const extension = file.mimetype === "application/pdf" ? ".pdf" : file.mimetype === "image/png" ? ".png" : ".jpg";
   const storedName = `${randomUUID()}${extension}`;
-  await mkdir(uploadRoot, { recursive: true });
-  const filePath = path.join(uploadRoot, storedName);
-  await writeFile(filePath, file.buffer, { flag: "wx" });
-  const document = await prisma.$transaction(async (transaction) => {
-    const created = await transaction.document.create({ data: { originalName: path.basename(file.originalname).slice(0, 255), storedName, mimeType: file.mimetype, filePath, fileSize: file.size, uploadedById: actor.id } });
-    await transaction.survey.update({ where: { id }, data: { reportDocumentId: created.id, surveyorId: actor.id, status: "IN_PROGRESS" } });
-    await transaction.auditLog.create({ data: { userId: actor.id, action: "SURVEY_REPORT_UPLOADED", entityType: "Survey", entityId: String(id), details: { documentId: created.id, mimeType: file.mimetype, fileSize: file.size } } });
-    return created;
-  });
+  const filePath = await storeObject({ category: "survey-reports", storedName, buffer: file.buffer, mimeType: file.mimetype });
+  let document;
+  try {
+    document = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.document.create({ data: { originalName: path.basename(file.originalname).slice(0, 255), storedName, mimeType: file.mimetype, filePath, fileSize: file.size, uploadedById: actor.id } });
+      await transaction.survey.update({ where: { id }, data: { reportDocumentId: created.id, surveyorId: actor.id, status: "IN_PROGRESS" } });
+      await transaction.auditLog.create({ data: { userId: actor.id, action: "SURVEY_REPORT_UPLOADED", entityType: "Survey", entityId: String(id), details: { documentId: created.id, mimeType: file.mimetype, fileSize: file.size } } });
+      return created;
+    });
+  } catch (error) {
+    await deleteObject(filePath).catch(() => {});
+    throw error;
+  }
   return { id: document.id, originalName: document.originalName, mimeType: document.mimeType, fileSize: document.fileSize, createdAt: document.createdAt };
 }
 
@@ -71,7 +74,8 @@ export async function getSurveyReport(id) {
   const survey = await prisma.survey.findUnique({ where: { id }, select: { reportDocument: { select: { originalName: true, mimeType: true, filePath: true } } } });
   if (!survey) throw Object.assign(new Error("Survey not found"), { status: 404 });
   if (!survey.reportDocument) throw Object.assign(new Error("Survey report not found"), { status: 404 });
-  return { ...survey.reportDocument, buffer: await readFile(survey.reportDocument.filePath) };
+  const stored = await loadObject(survey.reportDocument.filePath);
+  return { ...survey.reportDocument, buffer: stored || await readFile(survey.reportDocument.filePath) };
 }
 
 async function preserveAdjustmentConflict(transaction, survey, geometry, areaM2, conflicts, actor) {
