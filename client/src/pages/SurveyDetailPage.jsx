@@ -14,7 +14,7 @@ export default function SurveyDetailPage() {
   const { id } = useParams(); const navigate = useNavigate(); const { user } = useAuth(); const { t } = useLanguage();
   const [survey, setSurvey] = useState(null); const [notes, setNotes] = useState(""); const [reason, setReason] = useState(""); const [adjusted, setAdjusted] = useState(null); const [editing, setEditing] = useState(false); const [file, setFile] = useState(null); const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
   const load = () => surveyApi.get(id).then((data) => { setSurvey(data); setNotes(data.notes || ""); }).catch((e) => setError(e.response?.data?.message || t("loadSurveyError")));
-  useEffect(load, [id]);
+  useEffect(() => { load(); }, [id, t]);
   async function upload() { if (!file) return setError(t("reportRequired")); setSaving(true); setError(""); try { await surveyApi.uploadReport(id, file); await load(); } catch (e) { setError(e.response?.data?.message || t("uploadError")); } finally { setSaving(false); } }
   async function verify() { if (!window.confirm(t("confirmVerification"))) return; setSaving(true); setError(""); try { await surveyApi.verify(id, { notes, ...(adjusted ? { adjustedBoundary: adjusted } : {}) }); navigate("/surveys"); } catch (e) { setError(e.response?.data?.message || t("verificationError")); } finally { setSaving(false); } }
   async function cannotVerify() { if (!reason.trim()) return setError(t("reasonRequired")); setSaving(true); try { await surveyApi.cannotVerify(id, reason); navigate("/surveys"); } catch (e) { setError(e.response?.data?.message || t("cannotVerifyError")); } finally { setSaving(false); } }
