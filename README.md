@@ -185,6 +185,7 @@ The browser calls the same-origin `/api` path. There are no service bindings bec
 In Vercel, select the **Services** preset and leave the project root as `./`. Add these server environment variables for Production and Preview:
 
 - `DATABASE_URL`: hosted PostgreSQL connection string with PostGIS available
+- `DIRECT_URL`: non-pooled connection to the same database for migrations; for Neon, copy the connection string with connection pooling disabled
 - `JWT_SECRET`: random value of at least 32 characters
 - `JWT_EXPIRES_IN`: optional, defaults to `8h`
 - `CLIENT_URL`: the public deployment origin, used only for cross-origin access; same-origin `/api` requests do not depend on it
@@ -194,5 +195,7 @@ Do not add `VITE_API_URL` for the single-domain Services deployment. Before the 
 ```powershell
 npm run prisma:deploy --prefix server
 ```
+
+For Neon, keep the pooled `-pooler` URL in `DATABASE_URL` for application traffic and the non-pooled URL in `DIRECT_URL` for Prisma CLI operations. Both URLs must target the same branch, database, and role.
 
 The server's current survey/transfer document storage writes to the local filesystem. Vercel Functions do not provide durable local storage, so uploads require an object-storage migration (for example, Vercel Blob or S3) before that feature is production-safe.
