@@ -32,6 +32,23 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | PATCH | `/api/parcels/:id/correction` | Yes + CSRF | CLERK | Revalidate correction and create a new survey attempt |
 | GET | `/api/registrations/pending-approval` | Yes | REGISTRAR | Verified parcels awaiting approval |
 | POST | `/api/parcels/:id/approve` | Yes + CSRF | REGISTRAR | Atomic official registration and initial history |
+| GET | `/api/parcels/:id/owners` | Yes | CLERK, REGISTRAR, ADMIN, current owner | Safe current official owners |
+| GET | `/api/parcels/:id/history` | Yes | CLERK, REGISTRAR, ADMIN, current owner | Stable immutable ownership timeline |
+| GET | `/api/my/parcels` | Yes | OWNER | Current parcels derived from linked owner identity |
+| GET | `/api/my/parcels/:id` | Yes | OWNER | One currently owned official parcel |
+| GET | `/api/transfers` | Yes | CLERK, REGISTRAR, ADMIN | Filtered staff transfer queue |
+| GET | `/api/my/transfers` | Yes | OWNER | Transfers involving the linked owner |
+| GET | `/api/transfers/buyers` | Yes | OWNER | Safe verified-owner buyer choices |
+| POST | `/api/transfers` | Yes + CSRF | OWNER | Initiate a whole-parcel SALE |
+| GET | `/api/transfers/:id` | Yes | Staff or participant | Transfer requirements and audit timeline |
+| POST | `/api/transfers/:id/consent` | Yes + CSRF | Required OWNER | Confirm or decline seller consent |
+| POST | `/api/transfers/:id/buyer-response` | Yes + CSRF | Intended buyer | Accept or reject purchase |
+| POST | `/api/transfers/:id/documents` | Yes + CSRF | Participant OWNER, CLERK | Private PDF/JPEG/PNG upload |
+| GET | `/api/transfers/:id/documents/:documentId` | Yes | Staff or participant | Authorized private document retrieval |
+| POST | `/api/transfers/:id/clerk-review` | Yes + CSRF | CLERK | Approve completeness or return documents |
+| POST | `/api/transfers/:id/cancel` | Yes + CSRF | Initiator or buyer | Cancel an open transfer with reason |
+| POST | `/api/transfers/:id/reject` | Yes + CSRF | REGISTRAR | Reject an open transfer with reason |
+| POST | `/api/transfers/:id/approve` | Yes + CSRF | REGISTRAR | Payment-gated atomic ownership replacement |
 | GET | `/api/permissions/owner` | Yes | OWNER | Role-boundary demonstration |
 | GET | `/api/permissions/clerk` | Yes | CLERK | Role-boundary demonstration |
 | GET | `/api/permissions/surveyor` | Yes | SURVEYOR | Role-boundary demonstration |
@@ -80,6 +97,4 @@ The action and previous/new status are saved in the append-only audit log. An ad
 
 An overlap greater than 1 m² returns `409` with code `PARCEL_OVERLAP`. The data includes the new dispute ID, proposed area, every conflicting parcel, its full geometry, its intersection geometry, and overlap area. Retrying the same `idempotencyKey` returns the original accepted parcel or blocked dispute without creating duplicates.
 
-## Future API (not implemented)
-
-Transfers/consents/payments, dispute resolution, encumbrances, certificates, general uploads, public certificate verification, and SMS processing remain outside Day 1.
+There is intentionally no endpoint for a browser to mark payment as paid. Phase 11 will create verified payment records through its controlled service. Dispute resolution, encumbrance management, replacement certificate generation, public verification, and SMS processing remain future work.

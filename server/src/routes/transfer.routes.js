@@ -1,0 +1,24 @@
+import { Router } from "express";
+import { approve, buyerResponse, buyers, cancel, clerkReview, consent, downloadDocument, index, reject, show, store, uploadDocument } from "../controllers/transfer.controller.js";
+import { authenticate } from "../middleware/authenticate.js";
+import { authorize } from "../middleware/authorize.js";
+import { requireCsrf } from "../middleware/csrf.js";
+import { uploadTransferDocument } from "../middleware/transferUpload.js";
+import { validate } from "../middleware/validate.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { buyerResponseSchema, buyerSearchSchema, clerkReviewSchema, consentSchema, initiateTransferSchema, reasonSchema, transferDocumentSchema, transferIdSchema, transferListSchema } from "../validators/transfer.validators.js";
+
+const router = Router(); router.use(authenticate);
+router.get("/buyers", authorize("OWNER"), validate(buyerSearchSchema, "query"), asyncHandler(buyers));
+router.get("/", authorize("CLERK", "REGISTRAR", "ADMIN"), validate(transferListSchema, "query"), asyncHandler(index));
+router.post("/", authorize("OWNER"), requireCsrf, validate(initiateTransferSchema), asyncHandler(store));
+router.get("/:id", validate(transferIdSchema, "params"), asyncHandler(show));
+router.post("/:id/consent", authorize("OWNER"), requireCsrf, validate(transferIdSchema, "params"), validate(consentSchema), asyncHandler(consent));
+router.post("/:id/buyer-response", authorize("OWNER"), requireCsrf, validate(transferIdSchema, "params"), validate(buyerResponseSchema), asyncHandler(buyerResponse));
+router.post("/:id/documents", authorize("OWNER", "CLERK"), requireCsrf, validate(transferIdSchema, "params"), uploadTransferDocument, asyncHandler(uploadDocument));
+router.get("/:id/documents/:documentId", validate(transferDocumentSchema, "params"), asyncHandler(downloadDocument));
+router.post("/:id/clerk-review", authorize("CLERK"), requireCsrf, validate(transferIdSchema, "params"), validate(clerkReviewSchema), asyncHandler(clerkReview));
+router.post("/:id/cancel", authorize("OWNER"), requireCsrf, validate(transferIdSchema, "params"), validate(reasonSchema), asyncHandler(cancel));
+router.post("/:id/reject", authorize("REGISTRAR"), requireCsrf, validate(transferIdSchema, "params"), validate(reasonSchema), asyncHandler(reject));
+router.post("/:id/approve", authorize("REGISTRAR"), requireCsrf, validate(transferIdSchema, "params"), asyncHandler(approve));
+export default router;

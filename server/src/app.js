@@ -16,10 +16,13 @@ import parcelRoutes from "./routes/parcel.routes.js";
 import disputeRoutes from "./routes/dispute.routes.js";
 import surveyRoutes from "./routes/survey.routes.js";
 import registrationRoutes from "./routes/registration.routes.js";
+import myRoutes from "./routes/my.routes.js";
+import transferRoutes from "./routes/transfer.routes.js";
 
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
+  app.set("trust proxy", 1);
   app.use(helmet());
   app.use(cors({ origin: env.CLIENT_URL, credentials: true, methods: ["GET", "POST", "PATCH", "OPTIONS"], allowedHeaders: ["Content-Type", "X-CSRF-Token"] }));
   app.use(express.json({ limit: "1mb" }));
@@ -36,6 +39,8 @@ export function createApp() {
   app.use("/api/disputes", disputeRoutes);
   app.use("/api/surveys", surveyRoutes);
   app.use("/api/registrations", registrationRoutes);
+  app.use("/api/my", myRoutes);
+  app.use("/api/transfers", transferRoutes);
   app.use(notFoundHandler);
   app.use(errorHandler);
   return app;

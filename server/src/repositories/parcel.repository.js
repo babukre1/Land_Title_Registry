@@ -17,7 +17,7 @@ export async function findParcels(query, user, database = getPrisma()) {
     ...(query.status ? { status: query.status } : {}),
     ...(query.landUse ? { landUse: query.landUse } : {}),
     ...(query.ownerName ? { owners: { some: { owner: { OR: [{ fullName: { contains: query.ownerName, mode: "insensitive" } }, { companyName: { contains: query.ownerName, mode: "insensitive" } }] } } } } : {}),
-    ...(ownerId !== undefined ? { owners: { some: { ownerId } } } : {}),
+    ...(ownerId !== undefined ? { owners: { some: { ownerId } }, history: { some: { eventType: "REGISTRATION" } } } : {}),
   };
   const [parcels, total] = await Promise.all([
     database.parcel.findMany({ where, select: parcelListSelect, orderBy: { createdAt: "desc" }, skip: (query.page - 1) * query.limit, take: query.limit }),
@@ -29,7 +29,7 @@ export async function findParcels(query, user, database = getPrisma()) {
 export async function findParcelById(id, user, database = getPrisma()) {
   let ownerId;
   if (user.role === "OWNER") ownerId = (await database.owner.findUnique({ where: { userId: user.id }, select: { id: true } }))?.id ?? -1;
-  const parcel = await database.parcel.findFirst({ where: { id, ...(ownerId !== undefined ? { owners: { some: { ownerId } } } : {}) }, select: parcelListSelect });
+  const parcel = await database.parcel.findFirst({ where: { id, ...(ownerId !== undefined ? { owners: { some: { ownerId } }, history: { some: { eventType: "REGISTRATION" } } } : {}) }, select: parcelListSelect });
   if (!parcel) return null;
   const [geometry] = await database.$queryRaw`SELECT ST_AsGeoJSON(geometry)::json AS geometry FROM parcels WHERE id = ${id}`;
   return { ...parcel, geometry: geometry?.geometry ?? null };

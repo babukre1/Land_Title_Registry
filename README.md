@@ -120,6 +120,7 @@ The repeatable seed creates these development-only accounts. Every account uses 
 | SURVEYOR | `surveyor@example.com` |
 | CLERK | `clerk@example.com` |
 | OWNER | `owner@example.com` |
+| OWNER (buyer demo) | `buyer@example.com` |
 
 ## Implemented
 
@@ -139,10 +140,16 @@ The repeatable seed creates these development-only accounts. Every account uses 
 - Survey queues, field verification, boundary adjustment, Cannot Verify, clerk correction, and preserved survey attempts
 - Registrar review and atomic approval with duplicate protection and immutable initial ownership history
 - Unit/integration tests and CI workflow
+- Owner-scoped My Parcels, safe current-owner details, and immutable ownership timeline
+- Whole-parcel SALE workflow: joint consent, buyer response, private documents, clerk review, payment gate, registrar decision, and atomic title replacement
+- Certificate supersession with an explicit replacement-generation dependency
 
 ## Not implemented yet
 
-- Transfer, consent, fee/payment, dispute resolution, encumbrance, certificate, document-upload, and SMS workflows
+- Phase 11 payment collection/receipt UI (Phase 10 only consumes a trusted `PAID` record)
+- Phase 14 replacement certificate PDF generation (approval supersedes the old certificate and records reissue required)
+- Legally distinct GIFT, INHERITANCE, and COURT_ORDER authorization workflows; partial-share transfers
+- Dispute resolution, encumbrance creation/lifting, public certificate verification, and SMS workflows
 - Complete translation of every workflow message beyond the bilingual application shell
 
 The database and focused services support these future workflows, but the application does not simulate their completion.
@@ -164,4 +171,28 @@ The database and focused services support these future workflows, but the applic
 - Owner identity and company registration numbers are globally unique in this initial national registry.
 - A later boundary-change workflow will set the transaction-local `app.boundary_change_approved` database flag only after registrar authorization and overlap validation.
 
-See [architecture](docs/architecture.md), [database design](docs/database.md), [implemented API](docs/api.md), [registration flow](docs/land-registration-flow.md), and the [demo and judge guide](docs/demo-guide.md).
+See [architecture](docs/architecture.md), [database design](docs/database.md), [implemented API](docs/api.md), [registration flow](docs/land-registration-flow.md), [ownership transfer flow](docs/ownership-transfer-flow.md), and the [demo and judge guide](docs/demo-guide.md).
+
+## Vercel deployment
+
+The root `vercel.json` deploys two services in one Vercel project:
+
+- `client`: Vite SPA, public at `/`
+- `server`: Express API, public at `/api/*`
+
+The browser calls the same-origin `/api` path. There are no service bindings because neither service makes a server-side call to the other; the static Vite application calls the public API from the user's browser.
+
+In Vercel, select the **Services** preset and leave the project root as `./`. Add these server environment variables for Production and Preview:
+
+- `DATABASE_URL`: hosted PostgreSQL connection string with PostGIS available
+- `JWT_SECRET`: random value of at least 32 characters
+- `JWT_EXPIRES_IN`: optional, defaults to `8h`
+- `CLIENT_URL`: the public deployment origin, used only for cross-origin access; same-origin `/api` requests do not depend on it
+
+Do not add `VITE_API_URL` for the single-domain Services deployment. Before the first production deployment, apply migrations to the hosted database from a trusted local shell with `DATABASE_URL` pointing to that database:
+
+```powershell
+npm run prisma:deploy --prefix server
+```
+
+The server's current survey/transfer document storage writes to the local filesystem. Vercel Functions do not provide durable local storage, so uploads require an object-storage migration (for example, Vercel Blob or S3) before that feature is production-safe.

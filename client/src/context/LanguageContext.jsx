@@ -4,7 +4,7 @@ const messages = {
   en: {
     appName: "Land Title Registry", appSubtitle: "Digital Land Management", dashboard: "Dashboard", parcels: "Parcels",
     registerParcel: "Register Parcel", owners: "Owners", surveys: "Surveys", disputes: "Disputes", transfers: "Transfers",
-    certificates: "Certificates", reports: "Reports", users: "Users", settings: "Settings", comingSoon: "Coming soon",
+    certificates: "Certificates", reports: "Reports", users: "Users", settings: "Settings", comingSoon: "Coming soon", myParcels: "My parcels", myTransfers: "My transfers",
     logout: "Logout", loading: "Loading…", retry: "Try again", noResults: "No records found", search: "Search",
     language: "Language", welcome: "Welcome", registryOverview: "Registry overview", createOwner: "Create owner",
     createParcel: "Register new parcel", view: "View", status: "Status", district: "District", area: "Area",
@@ -15,7 +15,7 @@ const messages = {
   so: {
     appName: "Diiwaanka Lahaanshaha Dhulka", appSubtitle: "Maamulka Dijitaalka Dhulka", dashboard: "Bogga Guud", parcels: "Dhulalka",
     registerParcel: "Diiwaangeli Dhul", owners: "Milkiilayaasha", surveys: "Sahannada", disputes: "Khilaafaadka", transfers: "Wareejinta",
-    certificates: "Shahaadooyinka", reports: "Warbixinnada", users: "Isticmaalayaasha", settings: "Dejinta", comingSoon: "Dhawaan",
+    certificates: "Shahaadooyinka", reports: "Warbixinnada", users: "Isticmaalayaasha", settings: "Dejinta", comingSoon: "Dhawaan", myParcels: "Dhulalkayga", myTransfers: "Wareejintayda",
     logout: "Ka bax", loading: "Waa la soo rarayaa…", retry: "Mar kale isku day", noResults: "Wax xog ah lama helin", search: "Raadi",
     language: "Luqad", welcome: "Soo dhowow", registryOverview: "Dulmarka diiwaanka", createOwner: "Abuur milkiile",
     createParcel: "Diiwaangeli dhul cusub", view: "Eeg", status: "Xaalad", district: "Degmo", area: "Baaxad",

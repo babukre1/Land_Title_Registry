@@ -80,4 +80,8 @@ Each history row contains a JSON snapshot with owner IDs, display names, and sha
 
 `20261104000200_phase_7_survey_approval/migration.sql` adds document size, verified survey geometry/area, a verified-survey evidence constraint, and a partial unique index allowing only one initial `REGISTRATION` history event per parcel. Ownership history and audit triggers continue to reject updates and deletes.
 
+`20261106000100_phase_9_10_ownership_transfers/migration.sql` adds the immutable seller snapshot and decision metadata, links private supporting documents to transfers, and makes `ownership_history.transfer_id` unique when present. This last constraint makes repeated or concurrent approval unable to append a second legal event. The existing partial unique index still permits only one non-final transfer per parcel.
+
+Current ownership is replaced only inside registrar approval. The transfer stores seller IDs/shares at initiation and approval compares those values with `parcel_owners` under lock. Owner display-name edits do not change consent identity, while historical names remain preserved in snapshots.
+
 The repeatable seed uses upserts and conflict-safe inserts. It calculates parcel areas in PostgreSQL, hashes `DEMO_PASSWORD`, and never creates a registered parcel with incomplete shares.

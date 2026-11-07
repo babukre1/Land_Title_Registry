@@ -253,6 +253,7 @@ model Document {
   surveyReports   Survey[]          @relation("SurveyReportDocument")
   liftingEvidence Encumbrance[]     @relation("LiftingDocument")
   disputeLinks    DisputeDocument[]
+  transferLinks   TransferDocument[]
 
   @@index([uploadedById])
   @@map("documents")
@@ -287,13 +288,17 @@ model Transfer {
   buyerOwnerId          Int                @map("buyer_owner_id")
   transferType          TransferType       @map("transfer_type")
   declaredPrice         Decimal?           @map("declared_price") @db.Decimal(14, 2)
+  sellerSnapshot        Json                @map("seller_snapshot")
   status                TransferStatus     @default(AWAITING_OWNER_CONSENT)
   buyerAcceptedAt       DateTime?          @map("buyer_accepted_at") @db.Timestamptz(3)
+  buyerRejectedAt       DateTime?          @map("buyer_rejected_at") @db.Timestamptz(3)
   clerkReviewedById     Int?               @map("clerk_reviewed_by_id")
   clerkReviewedAt       DateTime?          @map("clerk_reviewed_at") @db.Timestamptz(3)
+  clerkReviewNotes      String?             @map("clerk_review_notes")
   registrarApprovedById Int?               @map("registrar_approved_by_id")
   registrarApprovedAt   DateTime?          @map("registrar_approved_at") @db.Timestamptz(3)
   cancellationReason    String?            @map("cancellation_reason")
+  rejectionReason       String?            @map("rejection_reason")
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   parcel                Parcel             @relation(fields: [parcelId], references: [id], onDelete: Restrict)
@@ -304,6 +309,7 @@ model Transfer {
   consents              TransferConsent[]
   historyEvents         OwnershipHistory[]
   payments              Payment[]
+  documents             TransferDocument[]
 
   @@index([parcelId, status])
   @@map("transfers")
@@ -321,6 +327,19 @@ model TransferConsent {
 
   @@unique([transferId, ownerId])
   @@map("transfer_consents")
+}
+
+model TransferDocument {
+  id         Int      @id @default(autoincrement())
+  transferId Int      @map("transfer_id")
+  documentId Int      @map("document_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  transfer   Transfer @relation(fields: [transferId], references: [id], onDelete: Restrict)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  @@unique([transferId, documentId])
+  @@index([transferId])
+  @@map("transfer_documents")
 }
 
 model OwnershipHistory {

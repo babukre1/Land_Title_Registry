@@ -7,16 +7,24 @@ import StatusBadge from "../components/StatusBadge.jsx";
 import ParcelMap from "../components/maps/ParcelMap.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { parcelApi } from "../services/registryService.js";
+import OwnershipTimeline from "../components/OwnershipTimeline.jsx";
 
 export default function ParcelDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [parcel, setParcel] = useState(null);
   const [error, setError] = useState("");
+  const [ownership, setOwnership] = useState({ owners: [], history: [] });
 
   useEffect(() => {
-    parcelApi.get(id).then(setParcel).catch((requestError) => setError(requestError.response?.data?.message || "Unable to load parcel."));
-  }, [id]);
+    parcelApi.get(id).then(async (data) => {
+      setParcel(data);
+      if (["REGISTERED", "DISPUTED"].includes(data.status) && user.role !== "SURVEYOR") {
+        const [owners, history] = await Promise.all([parcelApi.owners(id), parcelApi.history(id)]);
+        setOwnership({ owners, history });
+      }
+    }).catch((requestError) => setError(requestError.response?.data?.message || "Unable to load parcel."));
+  }, [id, user.role]);
 
   if (error) return <ErrorMessage message={error} />;
   if (!parcel) return <LoadingSpinner />;
@@ -31,9 +39,9 @@ export default function ParcelDetailPage() {
         <h2 className="font-bold text-blue-950">Parcel details</h2>
         <dl className="mt-4 grid grid-cols-2 gap-4 text-sm"><div><dt className="text-slate-500">Area name</dt><dd className="font-semibold">{parcel.areaName}</dd></div><div><dt className="text-slate-500">Land use</dt><dd className="font-semibold">{parcel.landUse}</dd></div><div><dt className="text-slate-500">Calculated area</dt><dd className="font-semibold">{Number(parcel.areaM2).toLocaleString()} m²</dd></div><div><dt className="text-slate-500">Created</dt><dd className="font-semibold">{new Date(parcel.createdAt).toLocaleDateString()}</dd></div></dl>
         <h3 className="mt-6 font-bold text-blue-950">Ownership</h3>
-        <div className="mt-3 space-y-2">{parcel.owners.map(({ owner, sharePercent }) => <div key={owner.id} className="flex justify-between rounded-lg bg-slate-50 p-3"><span>{owner.fullName || owner.companyName}</span><strong>{Number(sharePercent)}%</strong></div>)}</div>
+        <div className="mt-3 space-y-2">{ownership.owners.length ? ownership.owners.map((owner) => <div key={owner.id} className="flex justify-between rounded-lg bg-slate-50 p-3"><span>{owner.displayName} <small className="text-slate-500">({owner.ownerType})</small></span><strong>{owner.sharePercent}%</strong></div>) : parcel.owners.map(({ owner, sharePercent }) => <div key={owner.id} className="flex justify-between rounded-lg bg-slate-50 p-3"><span>{owner.fullName || owner.companyName} <small className="text-slate-500">(proposed)</small></span><strong>{Number(sharePercent)}%</strong></div>)}</div>
       </section>
       <ParcelMap proposedGeometry={parcel.geometry} />
-    </div>
+    </div>{["REGISTERED", "DISPUTED"].includes(parcel.status) && <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6"><h2 className="mb-5 text-lg font-bold text-blue-950">Immutable ownership history</h2><OwnershipTimeline events={ownership.history} /></section>}
   </>;
 }

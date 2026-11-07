@@ -13,6 +13,26 @@ export const parcelApi = {
   async geojson() { return (await apiClient.get("/parcels/geojson")).data.data; },
   async preview(input) { return (await apiClient.post("/parcels/preview", input)).data.data; },
   async create(input) { return (await apiClient.post("/parcels", input)).data; },
+  async owners(id) { return (await apiClient.get(`/parcels/${id}/owners`)).data.data; },
+  async history(id) { return (await apiClient.get(`/parcels/${id}/history`)).data.data; },
+};
+export const myApi = {
+  async parcels(params = {}) { return (await apiClient.get("/my/parcels", { params })).data; },
+  async transfers(params = {}) { return (await apiClient.get("/my/transfers", { params })).data; },
+};
+export const transferApi = {
+  async list(params = {}) { return (await apiClient.get("/transfers", { params })).data; },
+  async get(id) { return (await apiClient.get(`/transfers/${id}`)).data.data; },
+  async buyers(q = "") { return (await apiClient.get("/transfers/buyers", { params: { q } })).data.data; },
+  async create(input) { return (await apiClient.post("/transfers", input)).data.data; },
+  async consent(id, decision) { return (await apiClient.post(`/transfers/${id}/consent`, { decision })).data.data; },
+  async buyerResponse(id, decision) { return (await apiClient.post(`/transfers/${id}/buyer-response`, { decision })).data.data; },
+  async upload(id, file) { const form = new FormData(); form.append("document", file); return (await apiClient.post(`/transfers/${id}/documents`, form)).data.data; },
+  async clerkReview(id, input) { return (await apiClient.post(`/transfers/${id}/clerk-review`, input)).data.data; },
+  async cancel(id, reason) { return (await apiClient.post(`/transfers/${id}/cancel`, { reason })).data.data; },
+  async reject(id, reason) { return (await apiClient.post(`/transfers/${id}/reject`, { reason })).data.data; },
+  async approve(id) { return (await apiClient.post(`/transfers/${id}/approve`)).data.data; },
+  async openDocument(id, documentId) { const response = await apiClient.get(`/transfers/${id}/documents/${documentId}`, { responseType: "blob" }); window.open(URL.createObjectURL(response.data), "_blank", "noopener,noreferrer"); },
 };
 export const disputeApi = {
   async list(params = {}) { return (await apiClient.get("/disputes", { params })).data; },

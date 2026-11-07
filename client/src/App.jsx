@@ -20,6 +20,10 @@ import SurveyDetailPage from "./pages/SurveyDetailPage.jsx";
 import RegistrationsPage from "./pages/RegistrationsPage.jsx";
 import RegistrationReviewPage from "./pages/RegistrationReviewPage.jsx";
 import ParcelCorrectionPage from "./pages/ParcelCorrectionPage.jsx";
+import MyParcelsPage from "./pages/MyParcelsPage.jsx";
+import TransfersPage from "./pages/TransfersPage.jsx";
+import NewTransferPage from "./pages/NewTransferPage.jsx";
+import TransferDetailPage from "./pages/TransferDetailPage.jsx";
 
 export default function App() {
   return (
@@ -32,6 +36,15 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/parcels" element={<ParcelsPage />} />
           <Route path="/parcels/:id" element={<ParcelDetailPage />} />
+          <Route path="/transfers/:id" element={<TransferDetailPage />} />
+          <Route element={<ProtectedRoute allowedRoles={["OWNER"]} />}>
+            <Route path="/my-parcels" element={<MyParcelsPage />} />
+            <Route path="/my-transfers" element={<TransfersPage mine />} />
+            <Route path="/transfers/new" element={<NewTransferPage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={["CLERK", "REGISTRAR", "ADMIN"]} />}>
+            <Route path="/transfers" element={<TransfersPage />} />
+          </Route>
           <Route element={<ProtectedRoute allowedRoles={["CLERK"]} />}>
             <Route path="/parcels/new" element={<NewParcelPage />} />
             <Route path="/parcels/:id/correction" element={<ParcelCorrectionPage />} />

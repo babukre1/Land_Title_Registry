@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { approve, correct, geojson, index, preview, show, store } from "../controllers/parcel.controller.js";
+import { approve, correct, geojson, history, index, owners, preview, show, store } from "../controllers/parcel.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
 import { requireCsrf } from "../middleware/csrf.js";
@@ -15,5 +15,7 @@ router.post("/", authorize("CLERK"), requireCsrf, validate(parcelRegistrationSch
 router.patch("/:id/correction", authorize("CLERK"), requireCsrf, validate(parcelIdSchema, "params"), validate(parcelCorrectionSchema), asyncHandler(correct));
 router.post("/:id/approve", authorize("REGISTRAR"), requireCsrf, validate(parcelIdSchema, "params"), asyncHandler(approve));
 router.get("/", validate(parcelListSchema, "query"), asyncHandler(index));
+router.get("/:id/owners", validate(parcelIdSchema, "params"), asyncHandler(owners));
+router.get("/:id/history", validate(parcelIdSchema, "params"), asyncHandler(history));
 router.get("/:id", validate(parcelIdSchema, "params"), asyncHandler(show));
 export default router;

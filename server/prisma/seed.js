@@ -39,6 +39,11 @@ async function seedRolesAndUsers(passwordHash) {
       create: { fullName, email, phone, passwordHash, roleId: roles[roleName].id },
     });
   }
+  users.BUYER = await prisma.user.upsert({
+    where: { email: "buyer@example.com" },
+    update: { fullName: "Sahra Maxamed", phone: "+252610000006", passwordHash, roleId: roles.OWNER.id, isActive: true },
+    create: { fullName: "Sahra Maxamed", email: "buyer@example.com", phone: "+252610000006", passwordHash, roleId: roles.OWNER.id },
+  });
   return users;
 }
 
@@ -77,7 +82,12 @@ async function seedOwners(users) {
     update: { companyName: "Hilaac Horumar Ltd" },
     create: { ownerType: "COMPANY", companyName: "Hilaac Horumar Ltd", registrationNumber: "SO-BRC-2026-0042", phone: "+252615550202", email: "registry@hilaac.example.com", address: "Hamar Weyne, Muqdisho" },
   });
-  return { fadumo, cabdi, company };
+  const sahra = await prisma.owner.upsert({
+    where: { identityNumber: "SO-NID-100003" },
+    update: { fullName: "Sahra Maxamed", userId: users.BUYER.id },
+    create: { ownerType: "PERSON", fullName: "Sahra Maxamed", identityNumber: "SO-NID-100003", phone: "+252610000006", address: "Hodan, Muqdisho", userId: users.BUYER.id },
+  });
+  return { fadumo, cabdi, company, sahra };
 }
 
 async function insertParcel({ parcelNumber, districtId, areaName, landUse, geometry, status, createdById, approvedById = null }) {
@@ -128,7 +138,7 @@ async function main() {
   await seedParcels(districts, users, owners);
   const feeSetting = await prisma.feeSetting.findFirst();
   if (!feeSetting) await prisma.feeSetting.create({ data: { percentageRate: 2, minimumFee: 50, updatedById: users.ADMIN.id } });
-  console.log("Seed completed: roles, demo users, districts, owners, parcels, survey, history, and fee settings.");
+  console.log("Seed completed: roles, demo seller/buyer users, districts, owners, parcels, survey, history, and fee settings.");
 }
 
 main().catch((error) => { console.error(error); process.exitCode = 1; }).finally(async () => prisma.$disconnect());

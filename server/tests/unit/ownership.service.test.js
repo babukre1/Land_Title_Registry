@@ -14,4 +14,8 @@ describe("validateOwnershipShares", () => {
   it("uses decimal arithmetic rather than floating point", () => {
     expect(validateOwnershipShares([{ sharePercent: "33.33" }, { sharePercent: "33.33" }, { sharePercent: "33.34" }])).toBe(true);
   });
+
+  it("rejects duplicate owner allocations", () => {
+    expect(() => validateOwnershipShares([{ ownerId: 7, sharePercent: 50 }, { ownerId: 7, sharePercent: 50 }])).toThrow(/only once/);
+  });
 });
