@@ -18,9 +18,9 @@ function csrfFrom(cookies) { return decodeURIComponent(cookies.find((cookie) => 
 
 describeRegistration("owner, parcel, overlap and dispute workflow", () => {
   const prisma = hasTestDatabase ? getPrisma() : null;
-  const offset = (Date.now() % 100_000) / 1_000_000;
-  const originX = 46.2 + offset;
-  const originY = 2.3 + offset / 2;
+  const runSeed = parseInt(randomUUID().slice(0, 8), 16) / 0xffffffff;
+  const originX = -130 + runSeed * 10;
+  const originY = 15 + runSeed * 5;
   let district; let legalOwner; let clerkUser; let clerkCookies; let ownerCookies; let surveyorCookies;
 
   async function login(email) {

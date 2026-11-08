@@ -26,6 +26,7 @@ export const parcelListSchema = z.object({
   status: z.enum(["PENDING_SURVEY", "VERIFIED", "REGISTERED", "RETURNED_FOR_CORRECTION", "DISPUTED"]).optional(),
   landUse: z.enum(["RESIDENTIAL", "COMMERCIAL", "FARM"]).optional(),
   ownerName: z.string().trim().max(150).optional(),
+  ownerQuery: z.string().trim().max(150).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });

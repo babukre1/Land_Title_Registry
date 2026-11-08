@@ -14,7 +14,7 @@ const items = [
   { key: "disputes", to: "/disputes", icon: Scale, roles: ["CLERK", "REGISTRAR"] },
   { key: "myTransfers", to: "/my-transfers", icon: Building2, roles: ["OWNER"] },
   { key: "transfers", to: "/transfers", icon: Building2, roles: ["CLERK", "REGISTRAR", "ADMIN"] },
-  { key: "certificates", to: "#", icon: FileBadge, roles: ["OWNER", "REGISTRAR"], soon: true },
+  { key: "certificates", to: "/certificates", icon: FileBadge, roles: ["OWNER", "CLERK", "REGISTRAR", "ADMIN"] },
   { key: "reports", to: "#", icon: BarChart3, roles: ["ADMIN", "REGISTRAR"], soon: true },
   { key: "users", to: "#", icon: Users, roles: ["ADMIN"], soon: true },
   { key: "settings", to: "#", icon: Settings, roles: ["ADMIN"], soon: true },

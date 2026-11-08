@@ -16,7 +16,7 @@ const rectangle = (x, y, w = 0.00025, h = 0.00025) => ({ type: "Polygon", coordi
 suite("survey verification and registrar approval", () => {
   const prisma = enabled ? getPrisma() : null;
   let district; let owner; let clerk; let surveyor; let registrar; let ownerUser;
-  const base = 48 + (Date.now() % 10000) / 1000000;
+  const base = -160 + (parseInt(randomUUID().slice(0, 8), 16) / 0xffffffff) * 20;
 
   async function login(email) { const response = await request(app).post("/api/auth/login").send({ email, password }); expect(response.status).toBe(200); return cookiesFrom(response); }
   function mutate(cookies, method, url) { return request(app)[method](url).set("Cookie", cookies).set("X-CSRF-Token", csrfFrom(cookies)); }

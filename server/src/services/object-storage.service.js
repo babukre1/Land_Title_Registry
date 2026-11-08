@@ -2,6 +2,7 @@ import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } fro
 
 const R2_REFERENCE_PREFIX = "r2://";
 let client;
+const testObjects = new Map();
 
 function configuration() {
   const required = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME"];
@@ -33,22 +34,37 @@ function objectKey(category, storedName) {
 }
 
 export async function storeObject({ category, storedName, buffer, mimeType }) {
-  const { client: r2, bucket } = getClient();
   const key = objectKey(category, storedName);
+  if (process.env.NODE_ENV === "test") {
+    testObjects.set(key, Buffer.from(buffer));
+    return `${R2_REFERENCE_PREFIX}${key}`;
+  }
+  const { client: r2, bucket } = getClient();
   await r2.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: buffer, ContentType: mimeType, ContentLength: buffer.length }));
   return `${R2_REFERENCE_PREFIX}${key}`;
 }
 
 export async function loadObject(reference) {
   if (!reference?.startsWith(R2_REFERENCE_PREFIX)) return null;
+  const key = reference.slice(R2_REFERENCE_PREFIX.length);
+  if (process.env.NODE_ENV === "test") {
+    const buffer = testObjects.get(key);
+    if (!buffer) throw Object.assign(new Error("Stored document content is unavailable"), { status: 502 });
+    return Buffer.from(buffer);
+  }
   const { client: r2, bucket } = getClient();
-  const response = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: reference.slice(R2_REFERENCE_PREFIX.length) }));
+  const response = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
   if (!response.Body) throw Object.assign(new Error("Stored document content is unavailable"), { status: 502 });
   return Buffer.from(await response.Body.transformToByteArray());
 }
 
 export async function deleteObject(reference) {
   if (!reference?.startsWith(R2_REFERENCE_PREFIX)) return;
+  const key = reference.slice(R2_REFERENCE_PREFIX.length);
+  if (process.env.NODE_ENV === "test") {
+    testObjects.delete(key);
+    return;
+  }
   const { client: r2, bucket } = getClient();
-  await r2.send(new DeleteObjectCommand({ Bucket: bucket, Key: reference.slice(R2_REFERENCE_PREFIX.length) }));
+  await r2.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }

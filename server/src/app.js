@@ -18,6 +18,8 @@ import surveyRoutes from "./routes/survey.routes.js";
 import registrationRoutes from "./routes/registration.routes.js";
 import myRoutes from "./routes/my.routes.js";
 import transferRoutes from "./routes/transfer.routes.js";
+import certificateRoutes from "./routes/certificate.routes.js";
+import publicVerificationRoutes from "./routes/public-verification.routes.js";
 
 export function createApp() {
   const app = express();
@@ -29,6 +31,7 @@ export function createApp() {
   app.use(cookieParser());
   app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: env.NODE_ENV === "test" ? 1000 : 300, standardHeaders: "draft-8", legacyHeaders: false }));
   app.use("/api/health", healthRoutes);
+  app.use("/api/public", publicVerificationRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/permissions", permissionRoutes);
@@ -41,6 +44,7 @@ export function createApp() {
   app.use("/api/registrations", registrationRoutes);
   app.use("/api/my", myRoutes);
   app.use("/api/transfers", transferRoutes);
+  app.use("/api/certificates", certificateRoutes);
   app.use(notFoundHandler);
   app.use(errorHandler);
   return app;

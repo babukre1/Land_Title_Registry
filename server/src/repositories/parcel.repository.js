@@ -16,7 +16,12 @@ export async function findParcels(query, user, database = getPrisma()) {
     ...(query.districtId ? { districtId: query.districtId } : {}),
     ...(query.status ? { status: query.status } : {}),
     ...(query.landUse ? { landUse: query.landUse } : {}),
-    ...(query.ownerName ? { owners: { some: { owner: { OR: [{ fullName: { contains: query.ownerName, mode: "insensitive" } }, { companyName: { contains: query.ownerName, mode: "insensitive" } }] } } } } : {}),
+    ...((query.ownerQuery || query.ownerName) ? { owners: { some: { owner: { OR: [
+      { fullName: { contains: query.ownerQuery || query.ownerName, mode: "insensitive" } },
+      { companyName: { contains: query.ownerQuery || query.ownerName, mode: "insensitive" } },
+      { identityNumber: { contains: query.ownerQuery || query.ownerName, mode: "insensitive" } },
+      { registrationNumber: { contains: query.ownerQuery || query.ownerName, mode: "insensitive" } },
+    ] } } } } : {}),
     ...(ownerId !== undefined ? { owners: { some: { ownerId } }, history: { some: { eventType: "REGISTRATION" } } } : {}),
   };
   const [parcels, total] = await Promise.all([

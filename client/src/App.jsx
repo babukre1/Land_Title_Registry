@@ -24,6 +24,9 @@ import MyParcelsPage from "./pages/MyParcelsPage.jsx";
 import TransfersPage from "./pages/TransfersPage.jsx";
 import NewTransferPage from "./pages/NewTransferPage.jsx";
 import TransferDetailPage from "./pages/TransferDetailPage.jsx";
+import CertificatesPage from "./pages/CertificatesPage.jsx";
+import CertificateDetailPage from "./pages/CertificateDetailPage.jsx";
+import PublicVerificationPage from "./pages/PublicVerificationPage.jsx";
 
 export default function App() {
   return (
@@ -31,12 +34,18 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/verify" element={<PublicVerificationPage />} />
+      <Route path="/verify/:token" element={<PublicVerificationPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/parcels" element={<ParcelsPage />} />
           <Route path="/parcels/:id" element={<ParcelDetailPage />} />
           <Route path="/transfers/:id" element={<TransferDetailPage />} />
+          <Route element={<ProtectedRoute allowedRoles={["OWNER", "CLERK", "REGISTRAR", "ADMIN"]} />}>
+            <Route path="/certificates" element={<CertificatesPage />} />
+            <Route path="/certificates/:id" element={<CertificateDetailPage />} />
+          </Route>
           <Route element={<ProtectedRoute allowedRoles={["OWNER"]} />}>
             <Route path="/my-parcels" element={<MyParcelsPage />} />
             <Route path="/my-transfers" element={<TransfersPage mine />} />

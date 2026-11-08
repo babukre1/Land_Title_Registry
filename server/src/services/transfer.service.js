@@ -5,6 +5,7 @@ import path from "node:path";
 import { getPrisma } from "../lib/prisma.js";
 import { getLinkedOwner, validateOwnershipShares } from "./ownership.service.js";
 import { deleteObject, loadObject, storeObject } from "./object-storage.service.js";
+import { issueTitleCertificate } from "./certificate.service.js";
 
 const REGISTRY_LOCK_KEY = 8092026;
 const FINAL_STATUSES = ["APPROVED", "CANCELLED", "REJECTED"];
@@ -203,12 +204,13 @@ export async function rejectTransfer(id, reason, actor) {
 }
 
 export async function approveTransfer(id, actor) {
-  const prisma = getPrisma(); let repeated = false;
+  const prisma = getPrisma(); let repeated = false; let approvedParcelId;
   await prisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`SELECT pg_advisory_xact_lock(${REGISTRY_LOCK_KEY})`;
     await transaction.$queryRaw`SELECT id FROM transfers WHERE id=${id} FOR UPDATE`;
     const transfer = await transaction.transfer.findUnique({ where: { id }, select: { id: true, parcelId: true, buyerOwnerId: true, transferType: true, declaredPrice: true, sellerSnapshot: true, status: true, buyerAcceptedAt: true, clerkReviewedAt: true, consents: { select: { consentStatus: true } }, payments: { where: { status: "PAID" }, select: { id: true }, take: 1 }, buyerOwner: { select: ownerDisplay } } });
     if (!transfer) throw httpError("Transfer not found", 404);
+    approvedParcelId = transfer.parcelId;
     if (transfer.status === "APPROVED") { repeated = true; return; }
     if (!transfer.buyerAcceptedAt || !transfer.clerkReviewedAt || transfer.consents.length === 0 || transfer.consents.some(({ consentStatus }) => consentStatus !== "CONFIRMED")) throw httpError("Required consents, buyer acceptance, and clerk review must be complete");
     if (transfer.payments.length === 0) throw httpError("Payment required before approval", 409, "PAYMENT_REQUIRED");
@@ -220,7 +222,9 @@ export async function approveTransfer(id, actor) {
     await transaction.parcelOwner.create({ data: { parcelId: transfer.parcelId, ownerId: transfer.buyerOwnerId, sharePercent: new Prisma.Decimal(100) } });
     const ownershipSnapshot = { owners: [{ ownerId: transfer.buyerOwner.id, name: transfer.buyerOwner.fullName || transfer.buyerOwner.companyName, sharePercent: "100.00" }] };
     await transaction.ownershipHistory.create({ data: { parcelId: transfer.parcelId, transferId: id, eventType: "SALE", effectiveAt: new Date(), price: transfer.declaredPrice, approvedById: actor.id, ownershipSnapshot } });
-    await transaction.certificate.updateMany({ where: { parcelId: transfer.parcelId, status: "CURRENT" }, data: { status: "SUPERSEDED", supersededAt: new Date() } });
+    const certificateChangeTime = new Date();
+    await transaction.certificate.updateMany({ where: { parcelId: transfer.parcelId, status: "CURRENT" }, data: { status: "SUPERSEDED", supersededAt: certificateChangeTime } });
+    await transaction.certificate.updateMany({ where: { parcelId: transfer.parcelId, status: "PENDING_GENERATION" }, data: { status: "INVALID" } });
     await transaction.transfer.update({ where: { id }, data: { status: "APPROVED", registrarApprovedById: actor.id, registrarApprovedAt: new Date() } });
     await transaction.auditLog.createMany({ data: [
       { userId: actor.id, action: "REGISTRAR_APPROVED", entityType: "Transfer", entityId: String(id), details: { parcelId: transfer.parcelId } },
@@ -228,7 +232,12 @@ export async function approveTransfer(id, actor) {
       { userId: actor.id, action: "CERTIFICATE_REISSUE_REQUIRED", entityType: "Transfer", entityId: String(id), details: { parcelId: transfer.parcelId, generated: false } },
     ] });
   }, { maxWait: 10000, timeout: 30000 });
-  return { repeated, transfer: await getTransfer(id, actor) };
+  let certificatePending = repeated;
+  if (!repeated) {
+    try { await issueTitleCertificate(approvedParcelId, actor); }
+    catch (error) { certificatePending = true; if (process.env.NODE_ENV !== "test") console.error("Replacement certificate remains pending", error); }
+  }
+  return { repeated, certificatePending, transfer: await getTransfer(id, actor) };
 }
 
 export async function searchBuyers(query, actor) {

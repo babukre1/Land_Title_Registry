@@ -2,7 +2,7 @@
 
 A secure foundation for digital land registration and ownership management in Somalia. The system stores geographic parcel boundaries, separates account identities from legal owner identities, preserves permanent ownership history, and enforces five distinct server-side roles.
 
-This repository implements Day 1 Phases 1–8: the foundation, owner/parcel registration, protected spatial workflow, survey verification and correction, registrar approval, immutable initial ownership history, integration tests, and documentation. Transfers and certificates remain later-phase work.
+The repository implements the core parcel, survey, approval, ownership-transfer, title-certificate, and public-verification workflows for the SIMAD iLab Somali 10X challenge. Incomplete operational modules are identified honestly below.
 
 ## Technology versions
 
@@ -78,6 +78,7 @@ R2_ACCESS_KEY_ID=your-r2-access-key-id
 R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
 R2_BUCKET_NAME=land-title-registry-documents
 R2_OBJECT_PREFIX=land-title-registry
+PUBLIC_APP_URL=http://localhost:5173
 ```
 
 Survey reports and transfer evidence are stored in a private Cloudflare R2 bucket. Create an R2 API token restricted to that bucket with **Object Read & Write** permission. Keep the bucket private; the authenticated API streams documents to authorized users. `R2_OBJECT_PREFIX` is optional and defaults to `land-title-registry`.
@@ -149,14 +150,32 @@ The repeatable seed creates these development-only accounts. Every account uses 
 - Unit/integration tests and CI workflow
 - Owner-scoped My Parcels, safe current-owner details, and immutable ownership timeline
 - Whole-parcel SALE workflow: joint consent, buyer response, private documents, clerk review, payment gate, registrar decision, and atomic title replacement
-- Certificate supersession with an explicit replacement-generation dependency
+- Certificate supersession and recoverable replacement generation after ownership change
+- Registrar-issued title certificates with immutable snapshots, safe numbering, one-current constraints, real vector boundaries, QR codes, private R2 storage, and English/Somali PDFs
+- Public QR/manual verification with CURRENT/SUPERSEDED/INVALID results, privacy filtering, and a shared ten-per-minute rate limit
+- Two live dashboard charts and staff parcel search by parcel number, owner name/identifier, and district with filtered map results
+
+## Feature readiness
+
+| Required feature | Status | Notes |
+|---|---|---|
+| Parcel registration, area, overlap | DONE | PostGIS validation, atomic numbering, conflicts and disputes |
+| Survey verification and approval | DONE | Private report, adjustment, correction, registrar approval |
+| Owner management and history | DONE | Joint shares and append-only snapshots |
+| Whole-parcel SALE transfer | DONE | Consent, buyer response, document review, payment gate, approval |
+| Transfer fee/payment collection | PARTIAL | Trusted `PAID` gate exists; complete mock-payment UI is missing |
+| Encumbrances/legal holds | PARTIAL | Schema and transfer blocking exist; create/lift UI/API is missing |
+| Dispute management | PARTIAL | Creation/list/detail/blocking exist; resolution UI/API is missing |
+| Title certificates | DONE | Bilingual PDF, R2, snapshot, QR, lifecycle and protected download |
+| Public verification | DONE | Token/manual lookup, privacy and shared rate limiting |
+| Search and analytics | DONE | Role-scoped search/map and two database-driven charts |
+| Full-screen bilingual coverage | PARTIAL | Core shell, certificates and public verification are bilingual; some older workflow copy remains English |
 
 ## Not implemented yet
 
 - Phase 11 payment collection/receipt UI (Phase 10 only consumes a trusted `PAID` record)
-- Phase 14 replacement certificate PDF generation (approval supersedes the old certificate and records reissue required)
 - Legally distinct GIFT, INHERITANCE, and COURT_ORDER authorization workflows; partial-share transfers
-- Dispute resolution, encumbrance creation/lifting, public certificate verification, and SMS workflows
+- Dispute resolution, encumbrance creation/lifting, full mock-payment collection, and SMS workflows
 - Complete translation of every workflow message beyond the bilingual application shell
 
 The database and focused services support these future workflows, but the application does not simulate their completion.
@@ -178,7 +197,7 @@ The database and focused services support these future workflows, but the applic
 - Owner identity and company registration numbers are globally unique in this initial national registry.
 - A later boundary-change workflow will set the transaction-local `app.boundary_change_approved` database flag only after registrar authorization and overlap validation.
 
-See [architecture](docs/architecture.md), [database design](docs/database.md), [implemented API](docs/api.md), [registration flow](docs/land-registration-flow.md), [ownership transfer flow](docs/ownership-transfer-flow.md), and the [demo and judge guide](docs/demo-guide.md).
+See [architecture](docs/architecture.md), [database design](docs/database.md), [implemented API](docs/api.md), [registration flow](docs/land-registration-flow.md), [ownership transfer flow](docs/ownership-transfer-flow.md), [certificates](docs/certificates.md), [public verification](docs/public-verification.md), [testing](docs/testing.md), the [demo guide](docs/demo-guide.md), and the [judge guide](docs/judge-guide.md).
 
 ## Vercel deployment
 
@@ -196,6 +215,9 @@ In Vercel, select the **Services** preset and leave the project root as `./`. Ad
 - `JWT_SECRET`: random value of at least 32 characters
 - `JWT_EXPIRES_IN`: optional, defaults to `8h`
 - `CLIENT_URL`: the public deployment origin, used only for cross-origin access; same-origin `/api` requests do not depend on it
+- `PUBLIC_APP_URL`: public origin embedded in certificate QR links
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`: private Cloudflare R2 credentials and bucket
+- `R2_OBJECT_PREFIX`: optional object prefix, defaults to `land-title-registry`
 
 Do not add `VITE_API_URL` for the single-domain Services deployment. Before the first production deployment, apply migrations to the hosted database from a trusted local shell with `DATABASE_URL` pointing to that database:
 
@@ -205,4 +227,4 @@ npm run prisma:deploy --prefix server
 
 For Neon, keep the pooled `-pooler` URL in `DATABASE_URL` for application traffic and the non-pooled URL in `DIRECT_URL` for Prisma CLI operations. Both URLs must target the same branch, database, and role.
 
-The server's current survey/transfer document storage writes to the local filesystem. Vercel Functions do not provide durable local storage, so uploads require an object-storage migration (for example, Vercel Blob or S3) before that feature is production-safe.
+Survey reports, transfer evidence, and certificate artifacts use private Cloudflare R2 storage and do not rely on Vercel's ephemeral filesystem.

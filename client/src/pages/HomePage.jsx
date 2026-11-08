@@ -32,6 +32,7 @@ export default function HomePage() {
           <p className="mt-6 max-w-2xl text-xl leading-8 text-slate-600">Secure Digital Land Registration and Ownership Management</p>
           <div className="mt-9 flex flex-wrap items-center gap-4">
             <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-emerald-900/10 hover:bg-emerald-700">Access registry <ArrowRight size={18} /></Link>
+            <Link to="/verify" className="inline-flex items-center gap-2 rounded-xl border border-blue-950 px-6 py-3.5 font-semibold text-blue-950 hover:bg-blue-50"><ShieldCheck size={18} /> Verify certificate</Link>
             <div className={`inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-semibold shadow-sm ${apiStatus === "connected" ? "border-emerald-200 text-emerald-700" : apiStatus === "unavailable" ? "border-red-200 text-red-700" : "border-slate-200 text-slate-500"}`}>
               {apiStatus === "connected" ? <CheckCircle2 size={18} /> : <WifiOff size={18} />}
               {apiStatus === "connected" ? "API Connected" : apiStatus === "unavailable" ? "API Unavailable" : "Checking API…"}

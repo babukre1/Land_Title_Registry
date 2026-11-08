@@ -8,6 +8,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32).optional(),
   JWT_EXPIRES_IN: z.string().default("8h"),
   CLIENT_URL: z.url().default("http://localhost:5173"),
+  PUBLIC_APP_URL: z.url().optional(),
 });
 
 const result = envSchema.safeParse(process.env);

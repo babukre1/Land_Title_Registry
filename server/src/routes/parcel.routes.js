@@ -6,6 +6,7 @@ import { requireCsrf } from "../middleware/csrf.js";
 import { validate } from "../middleware/validate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { parcelCorrectionSchema, parcelIdSchema, parcelListSchema, parcelProposalSchema, parcelRegistrationSchema } from "../validators/parcel.validators.js";
+import { issue, listForParcel } from "../controllers/certificate.controller.js";
 
 const router = Router();
 router.use(authenticate);
@@ -14,6 +15,8 @@ router.post("/preview", authorize("CLERK"), requireCsrf, validate(parcelProposal
 router.post("/", authorize("CLERK"), requireCsrf, validate(parcelRegistrationSchema), asyncHandler(store));
 router.patch("/:id/correction", authorize("CLERK"), requireCsrf, validate(parcelIdSchema, "params"), validate(parcelCorrectionSchema), asyncHandler(correct));
 router.post("/:id/approve", authorize("REGISTRAR"), requireCsrf, validate(parcelIdSchema, "params"), asyncHandler(approve));
+router.post("/:id/certificates", authorize("REGISTRAR"), requireCsrf, validate(parcelIdSchema, "params"), asyncHandler(issue));
+router.get("/:id/certificates", authorize("OWNER", "CLERK", "REGISTRAR", "ADMIN"), validate(parcelIdSchema, "params"), asyncHandler(listForParcel));
 router.get("/", validate(parcelListSchema, "query"), asyncHandler(index));
 router.get("/:id/owners", validate(parcelIdSchema, "params"), asyncHandler(owners));
 router.get("/:id/history", validate(parcelIdSchema, "params"), asyncHandler(history));

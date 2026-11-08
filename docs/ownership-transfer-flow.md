@@ -19,12 +19,12 @@ flowchart LR
   G --> H[Atomic ownership replacement]
   H --> I[SALE history appended]
   I --> J[Old certificate superseded]
-  J --> K[Phase 14 replacement required]
+  J --> K[Replacement certificate generated]
 ```
 
 Initiation preserves every current seller and exact share. Decline/rejection/cancellation finalizes the record without changing title. Clerk review verifies document completeness but has no legal approval power. There is no public paid endpoint: until Phase 11 writes a trusted `PAID` row, registrar approval returns `Payment required before approval.`
 
-Approval holds the same registry advisory lock used by registration plus a transfer row lock. It rechecks current official ownership against the seller snapshot, all consents, buyer acceptance, clerk review, payment, disputes, and encumbrances. One transaction deletes old current rows, creates the buyer's 100% row, appends the unique SALE history event, marks the transfer approved, supersedes any current certificate, and writes audits. A failure rolls everything back. Repeated approval returns the existing result.
+Approval holds the same registry advisory lock used by registration plus a transfer row lock. It rechecks current official ownership against the seller snapshot, all consents, buyer acceptance, clerk review, payment, disputes, and encumbrances. One transaction deletes old current rows, creates the buyer's 100% row, appends the unique SALE history event, marks the transfer approved, supersedes any current certificate, invalidates stale pending generation, and writes audits. A failure rolls everything back. Certificate PDF/R2 work runs after this legal transaction: failure cannot roll back the completed transfer and leaves a recoverable pending state.
 
 GIFT, INHERITANCE, COURT_ORDER, and partial-share transfers are deliberately unavailable until their distinct legal authorization rules are defined. Phase 10 does not force an inheritance decedent to sign a voluntary-sale consent.
 
@@ -61,7 +61,7 @@ GIFT, INHERITANCE, COURT_ORDER, and partial-share transfers are deliberately una
 14. **Why do disputes/encumbrances block?** They represent unresolved legal restrictions on title transfer.
 15. **How are previous owners preserved?** Each registration/sale event stores its own names and exact shares snapshot.
 16. **Can the client mark payment paid?** No. Phase 11 must create a trusted `PAID` database record.
-17. **Is a new certificate faked?** No. The old one is superseded and an audited Phase 14 reissue requirement remains.
+17. **What if replacement PDF generation fails?** The legal transfer remains approved, the old certificate remains superseded, and the pending certificate can be retried safely.
 
 ## Demo
 

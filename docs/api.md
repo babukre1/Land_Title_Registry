@@ -49,6 +49,13 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | POST | `/api/transfers/:id/cancel` | Yes + CSRF | Initiator or buyer | Cancel an open transfer with reason |
 | POST | `/api/transfers/:id/reject` | Yes + CSRF | REGISTRAR | Reject an open transfer with reason |
 | POST | `/api/transfers/:id/approve` | Yes + CSRF | REGISTRAR | Payment-gated atomic ownership replacement |
+| POST | `/api/parcels/:id/certificates` | Yes + CSRF | REGISTRAR | Generate and issue a title certificate |
+| GET | `/api/parcels/:id/certificates` | Yes | Current owner or staff | Certificate history for a parcel |
+| GET | `/api/certificates` | Yes | OWNER, CLERK, REGISTRAR, ADMIN | Role-scoped certificate list |
+| GET | `/api/certificates/:id` | Yes | Current owner or staff | Certificate metadata and immutable snapshot |
+| GET | `/api/certificates/:id/download?lang=en\|so` | Yes | Current owner or staff | Protected bilingual PDF download |
+| GET | `/api/public/verify/:token` | No | Public | Privacy-safe QR-token verification, rate limited |
+| POST | `/api/public/verify` | No | Public | Manual parcel/certificate verification, rate limited |
 | GET | `/api/permissions/owner` | Yes | OWNER | Role-boundary demonstration |
 | GET | `/api/permissions/clerk` | Yes | CLERK | Role-boundary demonstration |
 | GET | `/api/permissions/surveyor` | Yes | SURVEYOR | Role-boundary demonstration |
@@ -97,4 +104,4 @@ The action and previous/new status are saved in the append-only audit log. An ad
 
 An overlap greater than 1 m² returns `409` with code `PARCEL_OVERLAP`. The data includes the new dispute ID, proposed area, every conflicting parcel, its full geometry, its intersection geometry, and overlap area. Retrying the same `idempotencyKey` returns the original accepted parcel or blocked dispute without creating duplicates.
 
-There is intentionally no endpoint for a browser to mark payment as paid. Phase 11 will create verified payment records through its controlled service. Dispute resolution, encumbrance management, replacement certificate generation, public verification, and SMS processing remain future work.
+There is intentionally no endpoint for a browser to mark payment as paid. Payment collection remains simulated and requires a trusted `PAID` record. Encumbrance creation/lifting, full dispute resolution, and SMS processing remain partial future work; certificate generation and public verification are implemented.

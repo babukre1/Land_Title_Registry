@@ -48,10 +48,16 @@ Parcel registration runs in one PostgreSQL transaction guarded by a transaction-
 
 Survey verification reuses the same lock and spatial helpers. It preserves the exact verified geometry and area on the survey attempt, so registrar approval can prove the parcel boundary still matches field evidence. Registrar approval locks the parcel row, rechecks status, report, boundary equality, disputes, geometry, overlap, owners and exact shares, then atomically sets `REGISTERED`, appends one `REGISTRATION` history event, and audits the action. Any failure rolls back the entire approval.
 
-Survey report bytes are kept outside the web root. Only randomized filenames and validated metadata are stored in PostgreSQL; authenticated role-checked routes read the files.
+Survey reports, transfer evidence, and generated certificate PDFs are stored in a private Cloudflare R2 bucket. PostgreSQL stores randomized object references and validated metadata; authenticated role-checked routes stream private documents. Tests use an isolated in-memory object store so CI never needs production R2 credentials.
 
 ## Ownership and transfer flow
 
 `ParcelOwner` is the current-state projection. Official reads additionally require a `REGISTRATION` history event, so proposed allocations on pending parcels never become legal ownership by accident. `OwnershipHistory` is the permanent event log; every row stores names and exact shares in a JSON snapshot and the database rejects updates/deletes.
 
 Transfer routes remain thin. `transfer.service.js` derives the caller's Owner identity from the authenticated User, snapshots all current sellers, enforces one open transfer, and advances explicit statuses. Final registrar approval uses the registry advisory lock and a row lock, rechecks ownership, consent, buyer acceptance, clerk review, trusted paid payment, disputes, and encumbrances, then replaces `ParcelOwner`, appends one history event, supersedes certificates, and writes audits in one transaction.
+
+## Certificate reliability and public verification
+
+Issuance first creates one database-protected `PENDING_GENERATION` record with an immutable parcel/owner/geometry/encumbrance snapshot. English and Somali PDFs are rendered outside the database transaction, including a vector projection of the stored GeoJSON boundary and a QR token URL. After R2 storage succeeds, a short locked transaction supersedes the old current certificate and promotes the pending record to `CURRENT`. A PDF or storage failure therefore leaves the previous certificate current and the new record recoverable.
+
+Private downloads require authentication and current ownership or a staff role. Public verification is a separate privacy-limited read: token and manual routes return certificate status, parcel facts, names/shares, and current risk indicators, but never identity numbers, contact data, documents, or audit details. Both public methods share a ten-request-per-minute in-memory limiter per trusted proxy-derived IP.

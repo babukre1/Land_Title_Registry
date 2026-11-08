@@ -70,7 +70,7 @@ Each history row contains a JSON snapshot with owner IDs, display names, and sha
 - Unique `(region_code, code)`, `(parcel_id, owner_id)`, `(transfer_id, owner_id)`, and dispute/candidate join pairs.
 - Owner-type checks require the correct person or company identity fields.
 - A partial unique index allows only one non-final transfer per parcel.
-- A partial unique index allows only one current certificate per parcel.
+- Partial unique indexes allow only one current certificate and one recoverable pending-generation certificate per parcel.
 - Registered/disputed geometry and area changes are blocked unless a controlled transaction sets `app.boundary_change_approved=true` after the future approval checks.
 - Cancellation and encumbrance checks require supporting fields.
 
@@ -81,6 +81,8 @@ Each history row contains a JSON snapshot with owner IDs, display names, and sha
 `20261104000200_phase_7_survey_approval/migration.sql` adds document size, verified survey geometry/area, a verified-survey evidence constraint, and a partial unique index allowing only one initial `REGISTRATION` history event per parcel. Ownership history and audit triggers continue to reject updates and deletes.
 
 `20261106000100_phase_9_10_ownership_transfers/migration.sql` adds the immutable seller snapshot and decision metadata, links private supporting documents to transfers, and makes `ownership_history.transfer_id` unique when present. This last constraint makes repeated or concurrent approval unable to append a second legal event. The existing partial unique index still permits only one non-final transfer per parcel.
+
+`20261108000100_certificate_pending_status/migration.sql` adds `PENDING_GENERATION` so database state survives PDF/R2 failures. `20261108000200_certificate_pending_constraint/migration.sql` permits only one pending-generation row per parcel. Issuance uses a parcel advisory lock and a unique certificate number/token; a stale pending snapshot is invalidated when ownership changes.
 
 Current ownership is replaced only inside registrar approval. The transfer stores seller IDs/shares at initiation and approval compares those values with `parcel_owners` under lock. Owner display-name edits do not change consent identity, while historical names remain preserved in snapshots.
 

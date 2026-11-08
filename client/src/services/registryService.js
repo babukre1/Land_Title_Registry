@@ -50,4 +50,19 @@ export const registrationApi = {
   async pending(params = {}) { return (await apiClient.get("/registrations/pending-approval", { params })).data; },
   async approve(parcelId) { return (await apiClient.post(`/parcels/${parcelId}/approve`)).data; },
 };
+export const certificateApi = {
+  async list() { return (await apiClient.get("/certificates")).data.data; },
+  async listForParcel(parcelId) { return (await apiClient.get(`/parcels/${parcelId}/certificates`)).data.data; },
+  async get(id) { return (await apiClient.get(`/certificates/${id}`)).data.data; },
+  async issue(parcelId) { return (await apiClient.post(`/parcels/${parcelId}/certificates`)).data.data; },
+  async download(id, lang = "en") {
+    const response = await apiClient.get(`/certificates/${id}/download`, { params: { lang }, responseType: "blob" });
+    const url = URL.createObjectURL(response.data); const anchor = document.createElement("a");
+    anchor.href = url; anchor.download = `land-title-certificate-${id}-${lang}.pdf`; anchor.click(); URL.revokeObjectURL(url);
+  },
+};
+export const publicVerificationApi = {
+  async byToken(token) { return (await apiClient.get(`/public/verify/${encodeURIComponent(token)}`)).data.data; },
+  async manual(input) { return (await apiClient.post("/public/verify", input)).data.data; },
+};
 parcelApi.correct = async function correct(id, input) { return (await apiClient.patch(`/parcels/${id}/correction`, input)).data.data; };
