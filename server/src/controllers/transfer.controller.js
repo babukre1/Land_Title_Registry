@@ -1,4 +1,5 @@
 import { approveTransfer, cancelTransfer, getTransfer, getTransferDocument, initiateTransfer, listTransfers, rejectTransfer, respondAsBuyer, respondToConsent, reviewTransferDocuments, saveTransferDocument, searchBuyers } from "../services/transfer.service.js";
+import { payTransferFee } from "../services/payment.service.js";
 
 export async function index(request, response) { const result = await listTransfers(request.validated.query); response.json({ success: true, data: result.transfers, pagination: result.pagination }); }
 export async function show(request, response) { response.json({ success: true, data: await getTransfer(request.validated.params.id, request.user) }); }
@@ -12,3 +13,4 @@ export async function cancel(request, response) { response.json({ success: true,
 export async function reject(request, response) { response.json({ success: true, data: await rejectTransfer(request.validated.params.id, request.validated.body.reason, request.user) }); }
 export async function approve(request, response) { const result = await approveTransfer(request.validated.params.id, request.user); response.status(result.repeated ? 200 : 201).json({ success: true, repeated: result.repeated, data: result.transfer }); }
 export async function buyers(request, response) { response.json({ success: true, data: await searchBuyers(request.validated.query.q, request.user) }); }
+export async function payFee(request, response) { const result = await payTransferFee(request.validated.params.id, request.validated.body, request.user); response.status(result.repeated ? 200 : 201).json({ success: true, repeated: result.repeated, data: result.payment }); }

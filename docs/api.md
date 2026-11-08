@@ -13,6 +13,8 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | PATCH | `/api/users/:id/status` | Yes + CSRF | ADMIN | Activate/deactivate account |
 | GET | `/api/dashboard/summary` | Yes | Any active role | Role-scoped live counts |
 | GET | `/api/districts` | Yes | Any active role | Registration district choices |
+| GET | `/api/fees/current` | Yes | Any active role | Current mock-payment fee rule |
+| PUT | `/api/fees/current` | Yes + CSRF | ADMIN | Append a new effective fee rule |
 | GET | `/api/owners` | Yes | CLERK, REGISTRAR | Search/paginate legal owners |
 | GET | `/api/owners/:id` | Yes | CLERK, REGISTRAR | Owner and parcel details |
 | POST | `/api/owners` | Yes + CSRF | CLERK, REGISTRAR | Create person/company owner |
@@ -23,6 +25,11 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | POST | `/api/parcels` | Yes + CSRF | CLERK | Register pending parcel or preserve blocked candidate |
 | GET | `/api/disputes` | Yes | CLERK, REGISTRAR | List overlap disputes |
 | GET | `/api/disputes/:id` | Yes | CLERK, REGISTRAR | Candidate, parties, conflicts, and geometry |
+| POST | `/api/disputes` | Yes + CSRF | CLERK | Open a manual parcel dispute |
+| POST | `/api/disputes/:id/review` | Yes + CSRF | REGISTRAR | Move an open dispute under review |
+| POST | `/api/disputes/:id/resolve` | Yes + CSRF | REGISTRAR | Resolve a dispute and optionally require boundary resurvey |
+| POST | `/api/disputes/:id/evidence` | Yes + CSRF | CLERK, REGISTRAR | Upload private supporting evidence |
+| GET | `/api/disputes/:id/evidence/:documentId` | Yes | CLERK, REGISTRAR | Download authorized evidence |
 | GET | `/api/surveys` | Yes | SURVEYOR, CLERK, REGISTRAR | Filtered, paginated survey attempts |
 | GET | `/api/surveys/:id` | Yes | SURVEYOR, CLERK, REGISTRAR | Survey, parcel, owners, report metadata, and boundaries |
 | POST | `/api/surveys/:id/report` | Yes + CSRF | SURVEYOR | Private PDF/JPEG/PNG upload, maximum 10 MB |
@@ -34,6 +41,10 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | POST | `/api/parcels/:id/approve` | Yes + CSRF | REGISTRAR | Atomic official registration and initial history |
 | GET | `/api/parcels/:id/owners` | Yes | CLERK, REGISTRAR, ADMIN, current owner | Safe current official owners |
 | GET | `/api/parcels/:id/history` | Yes | CLERK, REGISTRAR, ADMIN, current owner | Stable immutable ownership timeline |
+| GET | `/api/parcels/:id/encumbrances` | Yes | OWNER, CLERK, REGISTRAR, ADMIN | Active and lifted legal restrictions |
+| POST | `/api/parcels/:id/encumbrances` | Yes + CSRF | REGISTRAR | Add a mortgage or court hold |
+| POST | `/api/encumbrances/:id/lift` | Yes + CSRF | REGISTRAR | Lift with reason and signed evidence |
+| GET | `/api/encumbrances/:id/evidence` | Yes | Current owner or staff | Authorized evidence download |
 | GET | `/api/my/parcels` | Yes | OWNER | Current parcels derived from linked owner identity |
 | GET | `/api/my/parcels/:id` | Yes | OWNER | One currently owned official parcel |
 | GET | `/api/transfers` | Yes | CLERK, REGISTRAR, ADMIN | Filtered staff transfer queue |
@@ -46,6 +57,7 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | POST | `/api/transfers/:id/documents` | Yes + CSRF | Participant OWNER, CLERK | Private PDF/JPEG/PNG upload |
 | GET | `/api/transfers/:id/documents/:documentId` | Yes | Staff or participant | Authorized private document retrieval |
 | POST | `/api/transfers/:id/clerk-review` | Yes + CSRF | CLERK | Approve completeness or return documents |
+| POST | `/api/transfers/:id/payment` | Yes + CSRF | Intended buyer | Record an idempotent simulated mobile-money payment |
 | POST | `/api/transfers/:id/cancel` | Yes + CSRF | Initiator or buyer | Cancel an open transfer with reason |
 | POST | `/api/transfers/:id/reject` | Yes + CSRF | REGISTRAR | Reject an open transfer with reason |
 | POST | `/api/transfers/:id/approve` | Yes + CSRF | REGISTRAR | Payment-gated atomic ownership replacement |
@@ -104,4 +116,4 @@ The action and previous/new status are saved in the append-only audit log. An ad
 
 An overlap greater than 1 m² returns `409` with code `PARCEL_OVERLAP`. The data includes the new dispute ID, proposed area, every conflicting parcel, its full geometry, its intersection geometry, and overlap area. Retrying the same `idempotencyKey` returns the original accepted parcel or blocked dispute without creating duplicates.
 
-There is intentionally no endpoint for a browser to mark payment as paid. Payment collection remains simulated and requires a trusted `PAID` record. Encumbrance creation/lifting, full dispute resolution, and SMS processing remain partial future work; certificate generation and public verification are implemented.
+Payment collection is deliberately simulated. The buyer-facing endpoint creates a trusted server-side `PAID` record only after all preceding gates, returns a receipt, and queues a notification outbox row. No external mobile-money or SMS provider is contacted.

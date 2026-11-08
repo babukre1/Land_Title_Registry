@@ -2,6 +2,7 @@ import apiClient from "./apiClient.js";
 
 export const dashboardApi = { async summary() { return (await apiClient.get("/dashboard/summary")).data.data; } };
 export const districtApi = { async list() { return (await apiClient.get("/districts")).data.data; } };
+export const userApi = { async list(params = {}) { return (await apiClient.get("/users", { params })).data; }, async setStatus(id, isActive) { return (await apiClient.patch(`/users/${id}/status`, { isActive })).data.data; } };
 export const ownerApi = {
   async list(params = {}) { return (await apiClient.get("/owners", { params })).data; },
   async get(id) { return (await apiClient.get(`/owners/${id}`)).data.data; },
@@ -32,11 +33,27 @@ export const transferApi = {
   async cancel(id, reason) { return (await apiClient.post(`/transfers/${id}/cancel`, { reason })).data.data; },
   async reject(id, reason) { return (await apiClient.post(`/transfers/${id}/reject`, { reason })).data.data; },
   async approve(id) { return (await apiClient.post(`/transfers/${id}/approve`)).data.data; },
+  async pay(id, input) { return (await apiClient.post(`/transfers/${id}/payment`, input)).data.data; },
   async openDocument(id, documentId) { const response = await apiClient.get(`/transfers/${id}/documents/${documentId}`, { responseType: "blob" }); window.open(URL.createObjectURL(response.data), "_blank", "noopener,noreferrer"); },
 };
 export const disputeApi = {
   async list(params = {}) { return (await apiClient.get("/disputes", { params })).data; },
   async get(id) { return (await apiClient.get(`/disputes/${id}`)).data.data; },
+  async create(input) { return (await apiClient.post("/disputes", input)).data.data; },
+  async review(id) { return (await apiClient.post(`/disputes/${id}/review`)).data.data; },
+  async resolve(id, input) { return (await apiClient.post(`/disputes/${id}/resolve`, input)).data.data; },
+  async uploadEvidence(id, file) { const form = new FormData(); form.append("evidence", file); return (await apiClient.post(`/disputes/${id}/evidence`, form)).data.data; },
+  async openEvidence(id, documentId) { const response = await apiClient.get(`/disputes/${id}/evidence/${documentId}`, { responseType: "blob" }); window.open(URL.createObjectURL(response.data), "_blank", "noopener,noreferrer"); },
+};
+export const feeApi = {
+  async current() { return (await apiClient.get("/fees/current")).data.data; },
+  async update(input) { return (await apiClient.put("/fees/current", input)).data.data; },
+};
+export const encumbranceApi = {
+  async list(parcelId) { return (await apiClient.get(`/parcels/${parcelId}/encumbrances`)).data.data; },
+  async create(parcelId, input) { return (await apiClient.post(`/parcels/${parcelId}/encumbrances`, input)).data.data; },
+  async lift(id, reason, file) { const form = new FormData(); form.append("reason", reason); form.append("evidence", file); return (await apiClient.post(`/encumbrances/${id}/lift`, form)).data.data; },
+  async openEvidence(id) { const response = await apiClient.get(`/encumbrances/${id}/evidence`, { responseType: "blob" }); window.open(URL.createObjectURL(response.data), "_blank", "noopener,noreferrer"); },
 };
 export const surveyApi = {
   async list(params = {}) { return (await apiClient.get("/surveys", { params })).data; },

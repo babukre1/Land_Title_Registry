@@ -16,8 +16,8 @@ const items = [
   { key: "transfers", to: "/transfers", icon: Building2, roles: ["CLERK", "REGISTRAR", "ADMIN"] },
   { key: "certificates", to: "/certificates", icon: FileBadge, roles: ["OWNER", "CLERK", "REGISTRAR", "ADMIN"] },
   { key: "reports", to: "#", icon: BarChart3, roles: ["ADMIN", "REGISTRAR"], soon: true },
-  { key: "users", to: "#", icon: Users, roles: ["ADMIN"], soon: true },
-  { key: "settings", to: "#", icon: Settings, roles: ["ADMIN"], soon: true },
+  { key: "users", to: "/admin", icon: Users, roles: ["ADMIN"] },
+  { key: "settings", to: "/admin", icon: Settings, roles: ["ADMIN"] },
 ];
 
 export default function Sidebar({ open, onClose }) {

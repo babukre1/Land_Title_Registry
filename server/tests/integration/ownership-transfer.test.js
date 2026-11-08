@@ -60,8 +60,11 @@ suite("official ownership and whole-parcel sale transfer", () => {
     const blocked = await postAs("registrar", `/api/transfers/${transferId}/approve`, {}); expect(blocked.status).toBe(409); expect(blocked.body.message).toMatch(/Payment required/i);
   });
 
-  it("atomically changes ownership once after an internally verified payment", async () => {
-    await prisma.payment.create({ data: { transferId, amount: 500, paymentMethod: "EVC_PLUS", status: "PAID", referenceNumber: `PAID-${suffix}`, paidAt: new Date() } });
+  it("simulates the buyer payment and atomically changes ownership once", async () => {
+    const payment = await postAs("buyer", `/api/transfers/${transferId}/payment`, { paymentMethod: "EVC_PLUS", phone: "+252610009999" });
+    expect(payment.status).toBe(201); expect(payment.body.data.status).toBe("PAID"); expect(payment.body.data.referenceNumber).toMatch(/^MOCK-EVC_PLUS-/);
+    expect((await postAs("seller", `/api/transfers/${transferId}/payment`, { paymentMethod: "ZAAD", phone: "+252610009998" })).status).toBe(403);
+    expect(await prisma.smsOutbox.count({ where: { message: { contains: payment.body.data.referenceNumber } } })).toBe(1);
     const approved = await postAs("registrar", `/api/transfers/${transferId}/approve`, {}); expect(approved.status).toBe(201); expect(approved.body.data.status).toBe("APPROVED");
     const retry = await postAs("registrar", `/api/transfers/${transferId}/approve`, {}); expect(retry.status).toBe(200); expect(retry.body.repeated).toBe(true);
     const owners = await prisma.parcelOwner.findMany({ where: { parcelId: parcel.id } }); expect(owners).toHaveLength(1); expect(owners[0].ownerId).toBe(buyer.id); expect(owners[0].sharePercent.toFixed(2)).toBe("100.00");

@@ -8,8 +8,8 @@ Use the demo accounts listed in the root README and the configured `DEMO_PASSWOR
 |---|---|---|
 | Register and verify a parcel | Ready | Uses clerk, surveyor, and registrar role separation |
 | Detect overlap | Ready | Creates conflict evidence/dispute, not an active parcel |
-| Transfer ownership | Partial | The trusted paid gate exists, but the mock-payment collection UI is not implemented |
-| Court hold | Partial | Active holds block transfers, but add/lift hold UI/API is not implemented |
+| Transfer ownership | Ready | Includes buyer-only idempotent mock payment and receipt |
+| Court hold | Ready | Registrar add/lift workflow requires signed lifting evidence |
 | Certificate and QR verification | Ready | Supports protected bilingual downloads and public verification |
 
 ## Demo 1 — Register and verify a parcel
@@ -37,21 +37,19 @@ Expected: registration is blocked, the proposed/conflicting geometry is shown, r
 2. Complete every current joint-owner consent using each linked account.
 3. Sign in as the buyer, accept, and upload the supporting transfer document.
 4. Sign in as the clerk and approve document completeness.
-5. Supply a controlled trusted `PAID` fixture in the database because the payment collection UI is not yet implemented.
+5. As the buyer, use **Mock mobile-money payment**, enter a payer number and confirmation reference, and retain the displayed receipt.
 6. Sign in as the registrar and approve.
 
 Expected: current ownership is replaced atomically, one `SALE` history event is appended, the old certificate becomes `SUPERSEDED`, and a replacement certificate becomes `CURRENT`. If PDF/R2 generation fails, the legal transfer remains committed and certificate issuance remains visibly recoverable.
 
-## Demo 4 — Court hold (partial)
+## Demo 4 — Court hold
 
-This scenario cannot currently be completed through the application UI. The schema and transfer guard support active encumbrances, but trusted add/lift endpoints and supporting-evidence workflow are not implemented.
+1. Sign in as the registrar, open a registered parcel, and add a `COURT_HOLD` with a court-case number and description.
+2. Sign in as its owner and attempt a transfer.
+3. Return as registrar, enter a lifting reason, attach signed PDF/JPEG/PNG evidence, and lift the hold.
+4. Return as owner and initiate the transfer again.
 
-With a controlled database fixture only:
-
-1. Insert an active `COURT_HOLD` for a registered parcel.
-2. Attempt a transfer as its owner.
-
-Expected: initiation is blocked by the active restriction. Removing or lifting the fixture allows transfer only when no other active restriction or dispute remains. Do not present the fixture as a finished registrar workflow.
+Expected: the active hold blocks the first attempt. The lifted record remains in history with protected evidence, and a second attempt is allowed only when no other active restriction or unresolved dispute exists.
 
 ## Demo 5 — Certificate and QR verification
 
@@ -69,4 +67,5 @@ Expected: results visibly distinguish `CURRENT`, `SUPERSEDED`, and `INVALID`. Pu
 - Keep browser zoom and map framing readable.
 - Show the ownership timeline before and after a transfer.
 - Explain that PostGIS and database constraints remain authoritative; the client map is only an input/visualization layer.
-- Do not claim payment, court-hold management, dispute resolution, SMS, or complete translation as finished.
+- State clearly that mobile-money and SMS are simulated adapters, not live providers.
+- Do not claim every workflow screen is translated; full-screen bilingual coverage remains incomplete.

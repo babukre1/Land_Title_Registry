@@ -150,6 +150,9 @@ The repeatable seed creates these development-only accounts. Every account uses 
 - Unit/integration tests and CI workflow
 - Owner-scoped My Parcels, safe current-owner details, and immutable ownership timeline
 - Whole-parcel SALE workflow: joint consent, buyer response, private documents, clerk review, payment gate, registrar decision, and atomic title replacement
+- Configurable exact-decimal transfer fees, buyer-only idempotent mock mobile-money payment, receipts, and simulated SMS outbox
+- Registrar mortgage/court-hold creation and evidence-backed lifting with historical visibility and transfer blocking
+- Manual/automatic disputes, protected evidence, registrar resolution, and survey-gated immutable boundary corrections
 - Certificate supersession and recoverable replacement generation after ownership change
 - Registrar-issued title certificates with immutable snapshots, safe numbering, one-current constraints, real vector boundaries, QR codes, private R2 storage, and English/Somali PDFs
 - Public QR/manual verification with CURRENT/SUPERSEDED/INVALID results, privacy filtering, and a shared ten-per-minute rate limit
@@ -163,9 +166,9 @@ The repeatable seed creates these development-only accounts. Every account uses 
 | Survey verification and approval | DONE | Private report, adjustment, correction, registrar approval |
 | Owner management and history | DONE | Joint shares and append-only snapshots |
 | Whole-parcel SALE transfer | DONE | Consent, buyer response, document review, payment gate, approval |
-| Transfer fee/payment collection | PARTIAL | Trusted `PAID` gate exists; complete mock-payment UI is missing |
-| Encumbrances/legal holds | PARTIAL | Schema and transfer blocking exist; create/lift UI/API is missing |
-| Dispute management | PARTIAL | Creation/list/detail/blocking exist; resolution UI/API is missing |
+| Transfer fee/payment collection | DONE | Configurable fee, buyer-only idempotent simulation, receipt and outbox |
+| Encumbrances/legal holds | DONE | Registrar add/lift, signed evidence, history and transfer blocking |
+| Dispute management | DONE | Manual/automatic cases, evidence, review, resolution and boundary resurvey |
 | Title certificates | DONE | Bilingual PDF, R2, snapshot, QR, lifecycle and protected download |
 | Public verification | DONE | Token/manual lookup, privacy and shared rate limiting |
 | Search and analytics | DONE | Role-scoped search/map and two database-driven charts |
@@ -173,9 +176,9 @@ The repeatable seed creates these development-only accounts. Every account uses 
 
 ## Not implemented yet
 
-- Phase 11 payment collection/receipt UI (Phase 10 only consumes a trusted `PAID` record)
 - Legally distinct GIFT, INHERITANCE, and COURT_ORDER authorization workflows; partial-share transfers
-- Dispute resolution, encumbrance creation/lifting, full mock-payment collection, and SMS workflows
+- Live mobile-money settlement and SMS delivery providers (the repository uses explicit simulations)
+- District create/edit screens in the admin UI
 - Complete translation of every workflow message beyond the bilingual application shell
 
 The database and focused services support these future workflows, but the application does not simulate their completion.
@@ -195,7 +198,7 @@ The database and focused services support these future workflows, but the applic
 - `PENDING_SURVEY`, `VERIFIED`, `REGISTERED`, `RETURNED_FOR_CORRECTION`, and `DISPUTED` parcels remain protected by overlap checks.
 - `ADMIN` is operational administration, not a legal approval role, and receives no implicit registrar/surveyor powers.
 - Owner identity and company registration numbers are globally unique in this initial national registry.
-- A later boundary-change workflow will set the transaction-local `app.boundary_change_approved` database flag only after registrar authorization and overlap validation.
+- A boundary correction sets the transaction-local `app.boundary_change_approved` database flag only after surveyor verification, registrar authorization, and a fresh overlap validation.
 
 See [architecture](docs/architecture.md), [database design](docs/database.md), [implemented API](docs/api.md), [registration flow](docs/land-registration-flow.md), [ownership transfer flow](docs/ownership-transfer-flow.md), [certificates](docs/certificates.md), [public verification](docs/public-verification.md), [testing](docs/testing.md), the [demo guide](docs/demo-guide.md), and the [judge guide](docs/judge-guide.md).
 

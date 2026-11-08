@@ -1,13 +1,20 @@
 import { Router } from "express";
-import { indexDisputes, showDispute } from "../controllers/dispute.controller.js";
+import { decideDispute, downloadEvidence, indexDisputes, reviewDispute, showDispute, storeDispute, uploadEvidence } from "../controllers/dispute.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
 import { validate } from "../middleware/validate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { disputeIdSchema, disputeListSchema } from "../validators/dispute.validators.js";
+import { disputeDocumentSchema, disputeIdSchema, disputeListSchema, openDisputeSchema, resolveDisputeSchema } from "../validators/dispute.validators.js";
+import { requireCsrf } from "../middleware/csrf.js";
+import { uploadLegalEvidence } from "../middleware/legalEvidenceUpload.js";
 
 const router = Router();
 router.use(authenticate, authorize("CLERK", "REGISTRAR"));
 router.get("/", validate(disputeListSchema, "query"), asyncHandler(indexDisputes));
+router.post("/", authorize("CLERK"), requireCsrf, validate(openDisputeSchema), asyncHandler(storeDispute));
 router.get("/:id", validate(disputeIdSchema, "params"), asyncHandler(showDispute));
+router.post("/:id/review", authorize("REGISTRAR"), requireCsrf, validate(disputeIdSchema, "params"), asyncHandler(reviewDispute));
+router.post("/:id/resolve", authorize("REGISTRAR"), requireCsrf, validate(disputeIdSchema, "params"), validate(resolveDisputeSchema), asyncHandler(decideDispute));
+router.post("/:id/evidence", requireCsrf, validate(disputeIdSchema, "params"), uploadLegalEvidence, asyncHandler(uploadEvidence));
+router.get("/:id/evidence/:documentId", validate(disputeDocumentSchema, "params"), asyncHandler(downloadEvidence));
 export default router;

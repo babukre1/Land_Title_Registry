@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { parcelApi } from "../services/registryService.js";
 import OwnershipTimeline from "../components/OwnershipTimeline.jsx";
 import ParcelCertificatesSection from "../components/ParcelCertificatesSection.jsx";
+import ParcelEncumbrancesSection from "../components/ParcelEncumbrancesSection.jsx";
 
 export default function ParcelDetailPage() {
   const { id } = useParams();
@@ -43,6 +44,6 @@ export default function ParcelDetailPage() {
         <div className="mt-3 space-y-2">{ownership.owners.length ? ownership.owners.map((owner) => <div key={owner.id} className="flex justify-between rounded-lg bg-slate-50 p-3"><span>{owner.displayName} <small className="text-slate-500">({owner.ownerType})</small></span><strong>{owner.sharePercent}%</strong></div>) : parcel.owners.map(({ owner, sharePercent }) => <div key={owner.id} className="flex justify-between rounded-lg bg-slate-50 p-3"><span>{owner.fullName || owner.companyName} <small className="text-slate-500">(proposed)</small></span><strong>{Number(sharePercent)}%</strong></div>)}</div>
       </section>
       <ParcelMap proposedGeometry={parcel.geometry} />
-    </div>{["REGISTERED", "DISPUTED"].includes(parcel.status) && <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6"><h2 className="mb-5 text-lg font-bold text-blue-950">Immutable ownership history</h2><OwnershipTimeline events={ownership.history} /></section>}<ParcelCertificatesSection parcelId={parcel.id} parcelStatus={parcel.status} />
+    </div>{["REGISTERED", "DISPUTED"].includes(parcel.status) && <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6"><h2 className="mb-5 text-lg font-bold text-blue-950">Immutable ownership history</h2><OwnershipTimeline events={ownership.history} /></section>}{user.role !== "SURVEYOR" && <><ParcelEncumbrancesSection parcelId={parcel.id} /><ParcelCertificatesSection parcelId={parcel.id} parcelStatus={parcel.status} /></>}
   </>;
 }

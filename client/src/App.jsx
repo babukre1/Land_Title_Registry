@@ -27,6 +27,7 @@ import TransferDetailPage from "./pages/TransferDetailPage.jsx";
 import CertificatesPage from "./pages/CertificatesPage.jsx";
 import CertificateDetailPage from "./pages/CertificateDetailPage.jsx";
 import PublicVerificationPage from "./pages/PublicVerificationPage.jsx";
+import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
 
 export default function App() {
   return (
@@ -74,6 +75,9 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={["REGISTRAR"]} />}>
             <Route path="/registrations/pending" element={<RegistrationsPage />} />
             <Route path="/registrations/:id/review" element={<RegistrationReviewPage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+            <Route path="/admin" element={<AdminSettingsPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>

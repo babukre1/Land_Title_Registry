@@ -61,3 +61,9 @@ Transfer routes remain thin. `transfer.service.js` derives the caller's Owner id
 Issuance first creates one database-protected `PENDING_GENERATION` record with an immutable parcel/owner/geometry/encumbrance snapshot. English and Somali PDFs are rendered outside the database transaction, including a vector projection of the stored GeoJSON boundary and a QR token URL. After R2 storage succeeds, a short locked transaction supersedes the old current certificate and promotes the pending record to `CURRENT`. A PDF or storage failure therefore leaves the previous certificate current and the new record recoverable.
 
 Private downloads require authentication and current ownership or a staff role. Public verification is a separate privacy-limited read: token and manual routes return certificate status, parcel facts, names/shares, and current risk indicators, but never identity numbers, contact data, documents, or audit details. Both public methods share a ten-request-per-minute in-memory limiter per trusted proxy-derived IP.
+
+## Legal restrictions, disputes, and adapters
+
+Mock payment and notification services are explicit adapters. Payment creates a trusted database receipt but never claims external settlement; SMS writes to an outbox rather than calling a live provider. Both can later be replaced without moving legal rules into controllers or routes.
+
+Encumbrance and dispute services keep legal state append-oriented. A lifted hold remains queryable with its reason and protected R2 evidence. A dispute resolution may authorize a correction survey, but cannot mutate parcel geometry directly. Survey verification stores candidate verified geometry; registrar approval rechecks PostGIS validity and overlap, sets the database transaction flag, updates the parcel, and appends a `CORRECTION` event atomically.

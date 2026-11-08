@@ -7,7 +7,7 @@ import { deleteObject, loadObject, storeObject } from "./object-storage.service.
 
 const REGISTRY_LOCK_KEY = 8092026;
 const surveySelect = {
-  id: true, status: true, notes: true, cannotVerifyReason: true, verifiedAt: true, createdAt: true, updatedAt: true,
+  id: true, status: true, boundaryCorrection: true, notes: true, cannotVerifyReason: true, verifiedAt: true, createdAt: true, updatedAt: true,
   surveyor: { select: { id: true, fullName: true } },
   reportDocument: { select: { id: true, originalName: true, mimeType: true, fileSize: true, createdAt: true } },
   parcel: { select: { id: true, parcelNumber: true, areaName: true, areaM2: true, landUse: true, status: true, district: { select: { id: true, name: true, regionName: true } }, owners: { select: { sharePercent: true, owner: { select: { id: true, fullName: true, companyName: true } } } } } },
@@ -96,9 +96,10 @@ export async function verifySurvey(id, input, actor) {
   const prisma = getPrisma();
   const result = await prisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`SELECT pg_advisory_xact_lock(${REGISTRY_LOCK_KEY})`;
-    const survey = await transaction.survey.findUnique({ where: { id }, select: { id: true, status: true, reportDocumentId: true, parcel: { select: { id: true, districtId: true, parcelNumber: true, areaName: true, landUse: true, status: true, owners: { select: { sharePercent: true, owner: { select: { id: true, fullName: true, companyName: true } } } } } } } });
+    const survey = await transaction.survey.findUnique({ where: { id }, select: { id: true, status: true, boundaryCorrection: true, reportDocumentId: true, parcel: { select: { id: true, districtId: true, parcelNumber: true, areaName: true, landUse: true, status: true, owners: { select: { sharePercent: true, owner: { select: { id: true, fullName: true, companyName: true } } } } } } } });
     if (!survey) throw Object.assign(new Error("Survey not found"), { status: 404 });
-    if (!["PENDING", "IN_PROGRESS"].includes(survey.status) || survey.parcel.status !== "PENDING_SURVEY") throw Object.assign(new Error("Survey is not eligible for verification"), { status: 409 });
+    const eligibleParcel = survey.boundaryCorrection ? survey.parcel.status === "DISPUTED" : survey.parcel.status === "PENDING_SURVEY";
+    if (!["PENDING", "IN_PROGRESS"].includes(survey.status) || !eligibleParcel) throw Object.assign(new Error("Survey is not eligible for verification"), { status: 409 });
     if (!survey.reportDocumentId) throw Object.assign(new Error("A survey report is required before verification"), { status: 422 });
     const geometry = input.adjustedBoundary ? normalizePolygon(input.adjustedBoundary) : (await geometryForSurvey(id, transaction)).currentGeometry;
     const validation = await validatePolygon(geometry, transaction);
@@ -106,7 +107,8 @@ export async function verifySurvey(id, input, actor) {
     const areaM2 = input.adjustedBoundary ? await calculateAreaM2(geometry, transaction) : Number((await transaction.parcel.findUnique({ where: { id: survey.parcel.id }, select: { areaM2: true } })).areaM2);
     const conflicts = await findParcelOverlaps(geometry, survey.parcel.id, transaction);
     if (conflicts.length) return { conflict: true, disputeId: await preserveAdjustmentConflict(transaction, survey, geometry, areaM2, conflicts, actor), conflicts };
-    await transaction.$executeRaw`UPDATE parcels SET geometry=ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(geometry)}),4326), area_m2=${areaM2}, status='VERIFIED', updated_at=NOW() WHERE id=${survey.parcel.id}`;
+    if (survey.boundaryCorrection) await transaction.parcel.update({ where: { id: survey.parcel.id }, data: { status: "VERIFIED" } });
+    else await transaction.$executeRaw`UPDATE parcels SET geometry=ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(geometry)}),4326), area_m2=${areaM2}, status='VERIFIED', updated_at=NOW() WHERE id=${survey.parcel.id}`;
     await transaction.$executeRaw`UPDATE surveys SET status='VERIFIED', surveyor_id=${actor.id}, notes=${input.notes}, verified_at=NOW(), verified_geometry=ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(geometry)}),4326), verified_area_m2=${areaM2}, updated_at=NOW() WHERE id=${id}`;
     await transaction.auditLog.create({ data: { userId: actor.id, action: "SURVEY_VERIFIED", entityType: "Survey", entityId: String(id), details: { parcelId: survey.parcel.id, boundaryAdjusted: Boolean(input.adjustedBoundary), areaM2 } } });
     return { conflict: false };
@@ -118,11 +120,12 @@ export async function verifySurvey(id, input, actor) {
 export async function returnSurveyToClerk(id, reason, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {
-    const survey = await transaction.survey.findUnique({ where: { id }, select: { status: true, parcel: { select: { id: true, status: true } } } });
+    const survey = await transaction.survey.findUnique({ where: { id }, select: { status: true, boundaryCorrection: true, parcel: { select: { id: true, status: true } } } });
     if (!survey) throw Object.assign(new Error("Survey not found"), { status: 404 });
-    if (!["PENDING", "IN_PROGRESS"].includes(survey.status) || survey.parcel.status !== "PENDING_SURVEY") throw Object.assign(new Error("Survey is not eligible to be returned"), { status: 409 });
+    const eligibleParcel = survey.boundaryCorrection ? survey.parcel.status === "DISPUTED" : survey.parcel.status === "PENDING_SURVEY";
+    if (!["PENDING", "IN_PROGRESS"].includes(survey.status) || !eligibleParcel) throw Object.assign(new Error("Survey is not eligible to be returned"), { status: 409 });
     await transaction.survey.update({ where: { id }, data: { status: "CANNOT_VERIFY", cannotVerifyReason: reason, surveyorId: actor.id } });
-    await transaction.parcel.update({ where: { id: survey.parcel.id }, data: { status: "RETURNED_FOR_CORRECTION" } });
+    await transaction.parcel.update({ where: { id: survey.parcel.id }, data: { status: survey.boundaryCorrection ? "DISPUTED" : "RETURNED_FOR_CORRECTION" } });
     await transaction.auditLog.create({ data: { userId: actor.id, action: "SURVEY_CANNOT_VERIFY", entityType: "Survey", entityId: String(id), details: { parcelId: survey.parcel.id, reason } } });
   });
   return getSurvey(id);

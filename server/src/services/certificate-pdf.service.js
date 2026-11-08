@@ -55,7 +55,10 @@ function drawBoundary(doc, geometry, x, y, width, height) {
     if (index === 0) doc.moveTo(pointX, pointY); else doc.lineTo(pointX, pointY);
   });
   doc.closePath().fillAndStroke("#bfdbfe", "#2563eb");
-  doc.font("Helvetica-Bold").fontSize(9).fillColor("#0f172a").text("N ↑", x + width - 34, y + 8);
+  const northX = x + width - 24; const northY = y + 18;
+  doc.font("Helvetica-Bold").fontSize(9).fillColor("#0f172a").text("N", northX - 3, y + 7);
+  doc.moveTo(northX, northY + 13).lineTo(northX, northY + 2).stroke("#0f172a");
+  doc.moveTo(northX, northY + 2).lineTo(northX - 3, northY + 6).lineTo(northX + 3, northY + 6).closePath().fill("#0f172a");
 }
 
 export async function generateCertificatePdf({ certificateNumber, status, snapshot, language = "en", verificationUrl }) {

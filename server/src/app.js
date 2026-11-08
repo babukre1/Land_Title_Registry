@@ -20,13 +20,15 @@ import myRoutes from "./routes/my.routes.js";
 import transferRoutes from "./routes/transfer.routes.js";
 import certificateRoutes from "./routes/certificate.routes.js";
 import publicVerificationRoutes from "./routes/public-verification.routes.js";
+import feeRoutes from "./routes/fee.routes.js";
+import encumbranceRoutes from "./routes/encumbrance.routes.js";
 
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
   app.use(helmet());
-  app.use(cors({ origin: env.CLIENT_URL, credentials: true, methods: ["GET", "POST", "PATCH", "OPTIONS"], allowedHeaders: ["Content-Type", "X-CSRF-Token"] }));
+  app.use(cors({ origin: env.CLIENT_URL, credentials: true, methods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"], allowedHeaders: ["Content-Type", "X-CSRF-Token"] }));
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
   app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: env.NODE_ENV === "test" ? 1000 : 300, standardHeaders: "draft-8", legacyHeaders: false }));
@@ -45,6 +47,8 @@ export function createApp() {
   app.use("/api/my", myRoutes);
   app.use("/api/transfers", transferRoutes);
   app.use("/api/certificates", certificateRoutes);
+  app.use("/api/fees", feeRoutes);
+  app.use("/api/encumbrances", encumbranceRoutes);
   app.use(notFoundHandler);
   app.use(errorHandler);
   return app;

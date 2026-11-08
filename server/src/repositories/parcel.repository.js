@@ -2,7 +2,7 @@ import { getPrisma } from "../lib/prisma.js";
 
 const parcelListSelect = {
   id: true, parcelNumber: true, areaName: true, landUse: true, areaM2: true,
-  status: true, createdAt: true,
+  status: true, createdAt: true, updatedAt: true,
   district: { select: { id: true, name: true, code: true, regionName: true, regionCode: true } },
   owners: { select: { sharePercent: true, owner: { select: { id: true, ownerType: true, fullName: true, companyName: true } } } },
   surveys: { take: 1, orderBy: { createdAt: "desc" }, select: { id: true, status: true, notes: true, cannotVerifyReason: true, verifiedAt: true, createdAt: true, surveyor: { select: { id: true, fullName: true } }, reportDocument: { select: { id: true, originalName: true, mimeType: true, fileSize: true } } } },
@@ -25,7 +25,7 @@ export async function findParcels(query, user, database = getPrisma()) {
     ...(ownerId !== undefined ? { owners: { some: { ownerId } }, history: { some: { eventType: "REGISTRATION" } } } : {}),
   };
   const [parcels, total] = await Promise.all([
-    database.parcel.findMany({ where, select: parcelListSelect, orderBy: { createdAt: "desc" }, skip: (query.page - 1) * query.limit, take: query.limit }),
+    database.parcel.findMany({ where, select: parcelListSelect, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], skip: (query.page - 1) * query.limit, take: query.limit }),
     database.parcel.count({ where }),
   ]);
   return { parcels, pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) } };

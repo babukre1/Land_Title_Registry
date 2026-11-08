@@ -7,6 +7,8 @@ import { validate } from "../middleware/validate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { parcelCorrectionSchema, parcelIdSchema, parcelListSchema, parcelProposalSchema, parcelRegistrationSchema } from "../validators/parcel.validators.js";
 import { issue, listForParcel } from "../controllers/certificate.controller.js";
+import { indexForParcel as listEncumbrances, storeForParcel as addEncumbrance } from "../controllers/encumbrance.controller.js";
+import { createEncumbranceSchema } from "../validators/encumbrance.validators.js";
 
 const router = Router();
 router.use(authenticate);
@@ -17,6 +19,8 @@ router.patch("/:id/correction", authorize("CLERK"), requireCsrf, validate(parcel
 router.post("/:id/approve", authorize("REGISTRAR"), requireCsrf, validate(parcelIdSchema, "params"), asyncHandler(approve));
 router.post("/:id/certificates", authorize("REGISTRAR"), requireCsrf, validate(parcelIdSchema, "params"), asyncHandler(issue));
 router.get("/:id/certificates", authorize("OWNER", "CLERK", "REGISTRAR", "ADMIN"), validate(parcelIdSchema, "params"), asyncHandler(listForParcel));
+router.get("/:id/encumbrances", authorize("OWNER", "CLERK", "REGISTRAR", "ADMIN"), validate(parcelIdSchema, "params"), asyncHandler(listEncumbrances));
+router.post("/:id/encumbrances", authorize("REGISTRAR"), requireCsrf, validate(parcelIdSchema, "params"), validate(createEncumbranceSchema), asyncHandler(addEncumbrance));
 router.get("/", validate(parcelListSchema, "query"), asyncHandler(index));
 router.get("/:id/owners", validate(parcelIdSchema, "params"), asyncHandler(owners));
 router.get("/:id/history", validate(parcelIdSchema, "params"), asyncHandler(history));
