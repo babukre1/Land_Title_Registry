@@ -110,6 +110,18 @@ async function seedParcels(districts, users, owners) {
   const joint = await insertParcel({ parcelNumber: "MGQ-HDN-000002", districtId: districts.HDN.id, areaName: "Soobe", landUse: "COMMERCIAL", geometry: { type: "Polygon", coordinates: [[[45.32000, 2.03900], [45.32055, 2.03900], [45.32055, 2.03940], [45.32000, 2.03940], [45.32000, 2.03900]]] }, status: "REGISTERED", createdById: users.CLERK.id, approvedById: users.REGISTRAR.id });
   const pending = await insertParcel({ parcelNumber: "MGQ-WDJ-000001", districtId: districts.WDJ.id, areaName: "Buulo Xuubey", landUse: "RESIDENTIAL", geometry: { type: "Polygon", coordinates: [[[45.29000, 2.01500], [45.29045, 2.01500], [45.29045, 2.01540], [45.29000, 2.01540], [45.29000, 2.01500]]] }, status: "PENDING_SURVEY", createdById: users.CLERK.id });
 
+  await prisma.$executeRaw`
+    UPDATE districts AS d
+    SET next_parcel_number = GREATEST(
+      d.next_parcel_number,
+      COALESCE((
+        SELECT MAX(RIGHT(p.parcel_number, 6)::integer) + 1
+        FROM parcels p
+        WHERE p.district_id = d.id AND p.parcel_number ~ '[0-9]{6}$'
+      ), 1)
+    )
+  `;
+
   await prisma.parcelOwner.upsert({ where: { parcelId_ownerId: { parcelId: first.id, ownerId: owners.fadumo.id } }, update: { sharePercent: 100 }, create: { parcelId: first.id, ownerId: owners.fadumo.id, sharePercent: 100 } });
   await prisma.parcelOwner.upsert({ where: { parcelId_ownerId: { parcelId: joint.id, ownerId: owners.cabdi.id } }, update: { sharePercent: 60 }, create: { parcelId: joint.id, ownerId: owners.cabdi.id, sharePercent: 60 } });
   await prisma.parcelOwner.upsert({ where: { parcelId_ownerId: { parcelId: joint.id, ownerId: owners.company.id } }, update: { sharePercent: 40 }, create: { parcelId: joint.id, ownerId: owners.company.id, sharePercent: 40 } });

@@ -90,9 +90,17 @@ export async function registerParcel(input, actor) {
     }
 
     const [counter] = await transaction.$queryRaw`
-      UPDATE districts SET next_parcel_number = next_parcel_number + 1
-      WHERE id = ${district.id}
-      RETURNING next_parcel_number - 1 AS number
+      UPDATE districts AS d
+      SET next_parcel_number = GREATEST(
+        d.next_parcel_number,
+        COALESCE((
+          SELECT MAX(RIGHT(p.parcel_number, 6)::integer) + 1
+          FROM parcels p
+          WHERE p.district_id = d.id AND p.parcel_number ~ '[0-9]{6}$'
+        ), 1)
+      ) + 1
+      WHERE d.id = ${district.id}
+      RETURNING d.next_parcel_number - 1 AS number
     `;
     const parcelNumber = `${district.regionCode}-${district.code}-${String(counter.number).padStart(6, "0")}`;
     const [parcel] = await transaction.$queryRaw`
