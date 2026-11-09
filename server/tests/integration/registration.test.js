@@ -76,6 +76,9 @@ describeRegistration("owner, parcel, overlap and dispute workflow", () => {
     expect(Number(response.body.data.areaM2)).toBeGreaterThan(1_000);
     expect(response.body.data.parcelNumber).toMatch(/^MGQ-HDN-\d{6}$/);
     expect(response.body.data.surveys[0].status).toBe("PENDING");
+    const mapResponse = await request(app).get("/api/parcels/geojson").set("Cookie", clerkCookies);
+    const mapFeature = mapResponse.body.data.features.find((feature) => feature.properties.id === response.body.data.id);
+    expect(mapResponse.status).toBe(200); expect(mapFeature.properties.owners).toContainEqual({ name: legalOwner.fullName, sharePercent: 100 });
   });
 
   it("allows parcels sharing an edge or a corner", async () => {

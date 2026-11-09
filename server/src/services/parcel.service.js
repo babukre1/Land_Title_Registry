@@ -132,12 +132,24 @@ export async function getParcelGeoJson(user) {
   const ownerId = user.role === "OWNER" ? owner?.id ?? -1 : null;
   const rows = await prisma.$queryRaw`
     SELECT p.id, p.parcel_number AS "parcelNumber", p.status, p.land_use AS "landUse",
-           ST_AsGeoJSON(p.geometry)::json AS geometry
+           ST_AsGeoJSON(p.geometry)::json AS geometry,
+           COALESCE(
+             jsonb_agg(
+               jsonb_build_object(
+                 'name', COALESCE(o.full_name, o.company_name),
+                 'sharePercent', po.share_percent
+               ) ORDER BY po.id
+             ) FILTER (WHERE o.id IS NOT NULL),
+             '[]'::jsonb
+           ) AS owners
     FROM parcels p
+    LEFT JOIN parcel_owners po ON po.parcel_id = p.id
+    LEFT JOIN owners o ON o.id = po.owner_id
     WHERE (${ownerId}::integer IS NULL OR EXISTS (SELECT 1 FROM parcel_owners po WHERE po.parcel_id = p.id AND po.owner_id = ${ownerId}))
+    GROUP BY p.id
     ORDER BY p.created_at DESC
   `;
-  return { type: "FeatureCollection", features: rows.map((row) => ({ type: "Feature", geometry: row.geometry, properties: { id: row.id, parcelNumber: row.parcelNumber, status: row.status, landUse: row.landUse } })) };
+  return { type: "FeatureCollection", features: rows.map((row) => ({ type: "Feature", geometry: row.geometry, properties: { id: row.id, parcelNumber: row.parcelNumber, status: row.status, landUse: row.landUse, owners: row.owners.map((owner) => ({ ...owner, sharePercent: Number(owner.sharePercent) })) } })) };
 }
 
 /** Revalidates an unapproved returned parcel and creates a fresh survey attempt. */

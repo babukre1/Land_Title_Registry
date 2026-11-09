@@ -46,6 +46,7 @@ suite("encumbrance and dispute workflows", () => {
     expect(opened.status).toBe(201); disputeId = opened.body.data.id;
     expect((await mutate("owner", "post", "/api/transfers").send({ parcelId: disputedParcel.id, buyerOwnerId: buyer.id, transferType: "SALE", declaredPrice: 12000 })).status).toBe(409);
     const evidence = await mutate("clerk", "post", `/api/disputes/${disputeId}/evidence`).attach("evidence", Buffer.from("%PDF-1.4\n%%EOF"), { filename: "claim.pdf", contentType: "application/pdf" }); expect(evidence.status).toBe(201);
+    const premature = await mutate("registrar", "post", `/api/disputes/${disputeId}/resolve`).send({ resolution: "This decision must not skip registrar review.", boundaryChangeParcelIds: [] }); expect(premature.status).toBe(409);
     expect((await mutate("registrar", "post", `/api/disputes/${disputeId}/review`).send({})).body.data.status).toBe("UNDER_REVIEW");
     const resolved = await mutate("registrar", "post", `/api/disputes/${disputeId}/resolve`).send({ resolution: "Parties agreed that a new verified field boundary is required.", boundaryChangeParcelIds: [disputedParcel.id] });
     expect(resolved.status).toBe(200); expect(resolved.body.data.status).toBe("RESOLVED");

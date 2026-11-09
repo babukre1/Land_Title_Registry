@@ -7,6 +7,15 @@ const MOGADISHU = [2.0469, 45.3182];
 const colors = { REGISTERED: "#059669", PENDING_SURVEY: "#2563eb", VERIFIED: "#d97706", DISPUTED: "#dc2626", RETURNED_FOR_CORRECTION: "#64748b" };
 const styleFor = (status) => ({ color: colors[status] || "#64748b", weight: 3, fillOpacity: 0.18 });
 
+function parcelPopup(feature) {
+  const container = document.createElement("div");
+  const title = document.createElement("strong"); title.textContent = feature.properties.parcelNumber || "Parcel"; container.append(title);
+  const status = document.createElement("p"); status.textContent = String(feature.properties.status || "").replaceAll("_", " "); container.append(status);
+  const owners = feature.properties.owners || [];
+  if (owners.length) { const ownership = document.createElement("p"); ownership.textContent = `Belongs to: ${owners.map((owner) => `${owner.name} (${owner.sharePercent}%)`).join(", ")}`; container.append(ownership); }
+  return container;
+}
+
 function MapViewport({ data }) {
   const map = useMap();
   useEffect(() => {
@@ -20,5 +29,5 @@ function MapViewport({ data }) {
 export default function ParcelMap({ parcels, proposedGeometry, conflicts = [], className = "h-96" }) {
   const features = parcels?.features || [];
   const viewportData = { type: "FeatureCollection", features: [...features, ...(proposedGeometry ? [{ type: "Feature", geometry: proposedGeometry, properties: {} }] : []), ...conflicts.filter((item) => item.geometry).map((item) => ({ type: "Feature", geometry: item.geometry, properties: {} }))] };
-  return <div className={`overflow-hidden rounded-2xl border border-slate-200 ${className}`}><MapContainer center={MOGADISHU} zoom={13} className="h-full w-full" scrollWheelZoom><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />{features.map((feature) => <GeoJSON key={`${feature.properties.id}-${feature.properties.status}`} data={feature} style={() => styleFor(feature.properties.status)} onEachFeature={(item, layer) => layer.bindPopup(`<strong>${item.properties.parcelNumber || "Parcel"}</strong><br>${String(item.properties.status || "").replaceAll("_", " ")}<br>${String(item.properties.landUse || "").replaceAll("_", " ")}`)} />)}{proposedGeometry && <GeoJSON key={JSON.stringify(proposedGeometry)} data={proposedGeometry} style={{ color: "#2563eb", weight: 3, dashArray: "7 5", fillOpacity: 0.18 }} />}{conflicts.filter((item) => item.geometry).map((conflict) => <GeoJSON key={conflict.parcelId || conflict.id} data={conflict.geometry} style={{ color: "#dc2626", weight: 4, fillOpacity: 0.25 }} onEachFeature={(_, layer) => layer.bindPopup(`<strong>${conflict.parcelNumber || "Conflicting parcel"}</strong><br>Conflict or dispute`)} />)}<MapViewport data={viewportData} /><MapLegend /></MapContainer></div>;
+  return <div className={`overflow-hidden rounded-2xl border border-slate-200 ${className}`}><MapContainer center={MOGADISHU} zoom={13} className="h-full w-full" scrollWheelZoom><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />{features.map((feature) => <GeoJSON key={`${feature.properties.id}-${feature.properties.status}`} data={feature} style={() => styleFor(feature.properties.status)} onEachFeature={(item, layer) => layer.bindPopup(parcelPopup(item))} />)}{proposedGeometry && <GeoJSON key={JSON.stringify(proposedGeometry)} data={proposedGeometry} style={{ color: "#2563eb", weight: 3, dashArray: "7 5", fillOpacity: 0.18 }} />}{conflicts.filter((item) => item.geometry).map((conflict) => <GeoJSON key={conflict.parcelId || conflict.id} data={conflict.geometry} style={{ color: "#dc2626", weight: 4, fillOpacity: 0.25 }} onEachFeature={(_, layer) => layer.bindPopup(`<strong>${conflict.parcelNumber || "Conflicting parcel"}</strong><br>Conflict or dispute`)} />)}<MapViewport data={viewportData} /><MapLegend /></MapContainer></div>;
 }

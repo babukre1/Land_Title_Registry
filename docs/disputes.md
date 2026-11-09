@@ -6,4 +6,4 @@ Clerks and registrars can view parties, related parcels, candidate/conflict geom
 
 If a resolution requires a boundary change, the system creates a protected boundary-correction survey and marks the parcel `DISPUTED`. The resolution never edits legal geometry directly. A surveyor must upload evidence and verify the proposed boundary; the registrar then revalidates PostGIS validity and overlap, sets the transaction-local database authorization flag, copies the verified geometry, appends an immutable `CORRECTION` history event, and triggers replacement-certificate issuance. A failed correction leaves the prior legal boundary unchanged.
 
-Candidate outcomes are evidentiary decisions only. Marking a rejected candidate accepted does not silently create legal title; it still requires the ordinary registration checks and approvals.
+Rejected overlap candidates remain preserved as evidence. Resolving the dispute does not silently register a rejected parcel or transfer ownership.

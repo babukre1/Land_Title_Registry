@@ -89,7 +89,7 @@ export async function resolveDispute(id, input, actor) {
     await transaction.$queryRaw`SELECT id FROM disputes WHERE id=${id} FOR UPDATE`;
     const dispute = await transaction.dispute.findUnique({ where: { id }, select: { status: true, parcels: { select: { parcelId: true } } } });
     if (!dispute) throw httpError("Dispute not found", 404);
-    if (!['OPEN', 'UNDER_REVIEW'].includes(dispute.status)) throw httpError("This dispute is already resolved");
+    if (dispute.status !== "UNDER_REVIEW") throw httpError("The registrar must begin review before recording a final decision", 409);
     const linkedIds = new Set(dispute.parcels.map(({ parcelId }) => parcelId));
     if (input.boundaryChangeParcelIds.some((parcelId) => !linkedIds.has(parcelId))) throw httpError("Boundary review parcels must belong to this dispute", 422);
     for (const parcelId of input.boundaryChangeParcelIds) {
@@ -98,8 +98,7 @@ export async function resolveDispute(id, input, actor) {
       await transaction.parcel.update({ where: { id: parcelId }, data: { status: "DISPUTED" } });
     }
     await transaction.dispute.update({ where: { id }, data: { status: "RESOLVED", resolution: input.resolution, resolvedById: actor.id, resolvedAt: new Date() } });
-    if (input.candidateDecision) await transaction.parcelCandidate.updateMany({ where: { disputeId: id }, data: { status: input.candidateDecision, reason: input.resolution } });
-    await transaction.auditLog.create({ data: { userId: actor.id, action: "DISPUTE_RESOLVED", entityType: "Dispute", entityId: String(id), details: { boundaryChangeParcelIds: input.boundaryChangeParcelIds, candidateDecision: input.candidateDecision || null } } });
+    await transaction.auditLog.create({ data: { userId: actor.id, action: "DISPUTE_RESOLVED", entityType: "Dispute", entityId: String(id), details: { boundaryChangeParcelIds: input.boundaryChangeParcelIds } } });
   });
   return getDispute(id);
 }

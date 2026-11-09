@@ -1,10 +1,33 @@
 import L from "leaflet";
 import "leaflet-draw";
 import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import MapLegend from "./MapLegend.jsx";
 
 const MOGADISHU = [2.0469, 45.3182];
+const colors = { REGISTERED: "#059669", PENDING_SURVEY: "#2563eb", VERIFIED: "#d97706", DISPUTED: "#dc2626", RETURNED_FOR_CORRECTION: "#64748b" };
+
+function existingParcelPopup(feature) {
+  const container = document.createElement("div");
+  const title = document.createElement("strong"); title.textContent = feature.properties.parcelNumber || "Existing parcel"; container.append(title);
+  const status = document.createElement("p"); status.textContent = String(feature.properties.status || "").replaceAll("_", " "); container.append(status);
+  const owners = feature.properties.owners || [];
+  const ownership = document.createElement("p"); ownership.textContent = owners.length ? `Belongs to: ${owners.map((owner) => `${owner.name} (${owner.sharePercent}%)`).join(", ")}` : "Ownership details unavailable"; container.append(ownership);
+  const notice = document.createElement("small"); notice.textContent = "Existing parcel — view only"; container.append(notice);
+  return container;
+}
+
+function ExistingParcelViewport({ parcels }) {
+  const map = useMap(); const fittedRef = useRef(false);
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.invalidateSize()); observer.observe(map.getContainer());
+    if (!fittedRef.current && parcels?.features?.length) {
+      const bounds = L.geoJSON(parcels).getBounds(); if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 16 }); fittedRef.current = true;
+    }
+    return () => observer.disconnect();
+  }, [map, parcels]);
+  return null;
+}
 
 function DrawingControls({ value, onChange }) {
   const map = useMap(); const groupRef = useRef(null); const changeRef = useRef(onChange);
@@ -46,6 +69,6 @@ function DrawingControls({ value, onChange }) {
   return null;
 }
 
-export default function ParcelDrawingMap({ value, onChange }) {
-  return <div className="h-[28rem] overflow-hidden rounded-2xl border border-slate-200"><MapContainer center={MOGADISHU} zoom={14} className="h-full w-full"><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /><DrawingControls value={value} onChange={onChange} /><MapLegend /></MapContainer></div>;
+export default function ParcelDrawingMap({ value, onChange, existingParcels = { type: "FeatureCollection", features: [] } }) {
+  return <div className="h-[28rem] overflow-hidden rounded-2xl border border-slate-200"><MapContainer center={MOGADISHU} zoom={14} className="h-full w-full"><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />{existingParcels.features.map((feature) => <GeoJSON key={`existing-${feature.properties.id}-${feature.properties.status}`} data={feature} style={() => ({ color: colors[feature.properties.status] || "#64748b", weight: 2, fillOpacity: 0.2 })} onEachFeature={(item, layer) => layer.bindPopup(existingParcelPopup(item))} />)}<DrawingControls value={value} onChange={onChange} /><ExistingParcelViewport parcels={existingParcels} /><MapLegend /></MapContainer></div>;
 }

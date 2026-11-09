@@ -11,6 +11,5 @@ export const disputeDocumentSchema = z.object({ id: z.coerce.number().int().posi
 export const openDisputeSchema = z.object({ description: z.string().trim().min(10).max(3000), parcelIds: z.array(z.coerce.number().int().positive()).min(1).max(20).transform((ids) => [...new Set(ids)]) }).strict();
 export const resolveDisputeSchema = z.object({
   resolution: z.string().trim().min(10).max(4000),
-  boundaryChangeParcelIds: z.array(z.coerce.number().int().positive()).max(20).default([]).transform((ids) => [...new Set(ids)]),
-  candidateDecision: z.enum(["ACCEPTED", "WITHDRAWN"]).optional(),
+  boundaryChangeParcelIds: z.array(z.coerce.number().int().positive()).max(1).default([]).transform((ids) => [...new Set(ids)]),
 }).strict();
