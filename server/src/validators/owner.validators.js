@@ -3,6 +3,7 @@ import { z } from "zod";
 const optionalText = z.string().trim().max(300).optional().or(z.literal(""));
 const phone = z.string().trim().regex(/^\+?[0-9][0-9\s-]{6,24}$/, "Enter a valid phone number").optional().or(z.literal(""));
 const email = z.email().max(255).optional().or(z.literal(""));
+const loginPassword = z.string().min(8).max(72).optional();
 
 export const ownerCreateSchema = z.discriminatedUnion("ownerType", [
   z.object({
@@ -11,6 +12,7 @@ export const ownerCreateSchema = z.discriminatedUnion("ownerType", [
     identityNumber: z.string().trim().min(3).max(80),
     phone,
     email,
+    loginPassword,
     address: optionalText,
   }).strict(),
   z.object({
@@ -19,9 +21,12 @@ export const ownerCreateSchema = z.discriminatedUnion("ownerType", [
     registrationNumber: z.string().trim().min(3).max(80),
     phone,
     email,
+    loginPassword,
     address: optionalText,
   }).strict(),
-]);
+]).superRefine((value, context) => {
+  if (value.loginPassword && !value.email) context.addIssue({ code: "custom", path: ["email"], message: "Email is required when creating an owner login" });
+});
 
 export const ownerListSchema = z.object({
   q: z.string().trim().max(100).optional(),

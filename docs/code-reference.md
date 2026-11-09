@@ -18,7 +18,8 @@ The application uses thin HTTP routes, request controllers, business services, r
 | Module | Main functions | Inputs and outputs | Expected errors |
 |---|---|---|---|
 | `auth.service.js` | `authenticateCredentials`, `verifyAuthToken` | Credentials/token → safe user and signed/verified session data | 401 invalid credentials/token; 403 inactive account. |
-| `owner.service.js` | `listOwners`, `getOwner`, `createOwner` | Filters, owner ID, validated owner data → safe owner records | 404 missing owner; 409 duplicate identity/registration number. |
+| `owner.service.js` | `listOwners`, `getOwner`, `createOwner` | Filters, owner ID, validated owner data and optional login password → safe owner records and linked OWNER login | 404 missing owner; 409 duplicate identity/registration/email. |
+| `user.service.js` | `getUsers`, `getUser`, `createStaffUser`, `changeUserStatus` | Admin-validated account fields/status → safe user records | 404 missing user; 409 duplicate email or self-deactivation. |
 | `geometry.service.js` | `validatePolygon`, `calculateAreaM2`, `calculateOverlapM2`, `findParcelOverlaps`, `getParcelGeometry` | GeoJSON/parcel ID → PostGIS validation, area, intersections, or geometry | 422 malformed polygon; database errors propagate safely. |
 | `parcel.service.js` | `previewParcel`, `registerParcel`, `getParcelGeoJson`, `correctReturnedParcel` | Validated proposal/current user → preview, parcel, conflict evidence, or map FeatureCollection | 403 role/ownership; 404 references; 409 overlap/state; 422 geometry/shares/area. |
 | `survey.service.js` | `getPendingSurveys`, `getSurvey`, `saveSurveyReport`, `verifySurvey`, `returnSurveyToClerk` | Survey ID, evidence, boundary and notes → updated survey/parcel | 404 survey; 409 wrong state/overlap; 422 file or geometry validation. |

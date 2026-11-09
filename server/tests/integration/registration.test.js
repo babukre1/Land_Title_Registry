@@ -62,6 +62,20 @@ describeRegistration("owner, parcel, overlap and dispute workflow", () => {
     expect(await prisma.auditLog.count({ where: { action: "OWNER_CREATED", entityId: String(created.body.data.id) } })).toBe(1);
   });
 
+  it("atomically creates a linked OWNER login when credentials are supplied", async () => {
+    const suffix = Date.now();
+    const email = `linked-owner-${suffix}@example.com`;
+    const created = await postAsClerk("/api/owners", { ownerType: "PERSON", fullName: "Linked Owner", identityNumber: `LINKED-${suffix}`, phone: "+252 61 555 0199", email, loginPassword: password, address: "Hodan" });
+    expect(created.status).toBe(201);
+    const storedOwner = await prisma.owner.findUnique({ where: { id: created.body.data.id }, include: { user: { include: { role: true } } } });
+    expect(storedOwner.user.email).toBe(email);
+    expect(storedOwner.user.role.name).toBe("OWNER");
+    expect(storedOwner.user.passwordHash).not.toBe(password);
+    const ownerLogin = await request(app).post("/api/auth/login").send({ email, password });
+    expect(ownerLogin.status).toBe(200);
+    expect(ownerLogin.body.user.role).toBe("OWNER");
+  });
+
   it("returns real role-scoped dashboard statistics", async () => {
     const response = await request(app).get("/api/dashboard/summary").set("Cookie", clerkCookies);
     expect(response.status).toBe(200);

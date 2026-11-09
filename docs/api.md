@@ -9,6 +9,7 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | GET | `/api/auth/me` | Yes | Any active role | Current safe profile |
 | POST | `/api/auth/logout` | Yes + CSRF | Any active role | Audit logout and clear cookies |
 | GET | `/api/users?page=1&limit=25` | Yes | ADMIN | Paginated safe user list |
+| POST | `/api/users` | Yes + CSRF | ADMIN | Create a staff account with an allowed role |
 | GET | `/api/users/:id` | Yes | ADMIN | Safe user detail |
 | PATCH | `/api/users/:id/status` | Yes + CSRF | ADMIN | Activate/deactivate account |
 | GET | `/api/dashboard/summary` | Yes | Any active role | Role-scoped live counts |
@@ -86,7 +87,8 @@ GET endpoints have no request body. Their supported query parameters appear in t
 | `POST /api/auth/logout` | Empty | `{ loggedOut: true }`; clears cookies |
 | `PATCH /api/users/:id/status` | `{ isActive }` | Updated safe user |
 | `PUT /api/fees/current` | `{ percentageRate, minimumFee }` | New effective fee setting |
-| `POST /api/owners` | Person `{ ownerType, fullName, identityNumber, phone?, email?, address? }` or company equivalent | Created owner |
+| `POST /api/owners` | Person `{ ownerType, fullName, identityNumber, phone?, email?, loginPassword?, address? }` or company equivalent. `loginPassword` requires email and creates a linked OWNER login. | Created owner |
+| `POST /api/users` | `{ fullName, email, phone?, role, password }`, where role is `CLERK`, `SURVEYOR`, `REGISTRAR`, or `ADMIN` | Safe created user; password hash is never returned |
 | `POST /api/parcels/preview` | `{ districtId, areaName, landUse, geometry, owners[], confirmUnusualArea? }` | Validity, authoritative area, warning and conflicts |
 | `POST /api/parcels` | Preview fields plus unique `idempotencyKey` | Created pending parcel; overlap returns structured 409 dispute evidence |
 | `PATCH /api/parcels/:id/correction` | Parcel proposal without idempotency key | Corrected parcel and new survey attempt |

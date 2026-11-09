@@ -2,6 +2,7 @@ import L from "leaflet";
 import "leaflet-draw";
 import { useEffect, useRef } from "react";
 import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
+import LocationSearchControl from "./LocationSearchControl.jsx";
 import MapLegend from "./MapLegend.jsx";
 
 const MOGADISHU = [2.0469, 45.3182];
@@ -22,7 +23,7 @@ function ExistingParcelViewport({ parcels }) {
   useEffect(() => {
     const observer = new ResizeObserver(() => map.invalidateSize()); observer.observe(map.getContainer());
     if (!fittedRef.current && parcels?.features?.length) {
-      const bounds = L.geoJSON(parcels).getBounds(); if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 16 }); fittedRef.current = true;
+      const bounds = L.geoJSON(parcels).getBounds(); if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 18 }); fittedRef.current = true;
     }
     return () => observer.disconnect();
   }, [map, parcels]);
@@ -71,5 +72,5 @@ function DrawingControls({ value, onChange }) {
 
 /** Renders existing parcels as a separate read-only layer and exposes only the proposed polygon through onChange. */
 export default function ParcelDrawingMap({ value, onChange, existingParcels = { type: "FeatureCollection", features: [] } }) {
-  return <div className="h-[28rem] overflow-hidden rounded-2xl border border-slate-200"><MapContainer center={MOGADISHU} zoom={14} className="h-full w-full"><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />{existingParcels.features.map((feature) => <GeoJSON key={`existing-${feature.properties.id}-${feature.properties.status}`} data={feature} style={() => ({ color: colors[feature.properties.status] || "#64748b", weight: 2, fillOpacity: 0.2 })} onEachFeature={(item, layer) => layer.bindPopup(existingParcelPopup(item))} />)}<DrawingControls value={value} onChange={onChange} /><ExistingParcelViewport parcels={existingParcels} /><MapLegend /></MapContainer></div>;
+  return <div className="h-[28rem] overflow-hidden rounded-2xl border border-slate-200"><MapContainer center={MOGADISHU} zoom={14} maxZoom={22} zoomSnap={0.5} zoomDelta={0.5} className="h-full w-full" scrollWheelZoom><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxNativeZoom={19} maxZoom={22} />{existingParcels.features.map((feature) => <GeoJSON key={`existing-${feature.properties.id}-${feature.properties.status}`} data={feature} style={() => ({ color: colors[feature.properties.status] || "#64748b", weight: 2, fillOpacity: 0.2 })} onEachFeature={(item, layer) => layer.bindPopup(existingParcelPopup(item))} />)}<DrawingControls value={value} onChange={onChange} /><ExistingParcelViewport parcels={existingParcels} /><LocationSearchControl /><MapLegend /></MapContainer></div>;
 }

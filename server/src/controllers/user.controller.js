@@ -1,5 +1,9 @@
 /** Administrator user handlers return safe projections and audited activation/deactivation results. */
-import { changeUserStatus, getUser, getUsers } from "../services/user.service.js";
+import { changeUserStatus, createStaffUser, getUser, getUsers } from "../services/user.service.js";
+
+export async function createUser(request, response) {
+  response.status(201).json({ success: true, data: await createStaffUser(request.validated.body, request.user) });
+}
 
 export async function listUsers(request, response) {
   const result = await getUsers(request.validated.query);

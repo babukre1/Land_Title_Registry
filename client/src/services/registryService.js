@@ -3,7 +3,7 @@ import apiClient from "./apiClient.js";
 
 export const dashboardApi = { async summary() { return (await apiClient.get("/dashboard/summary")).data.data; } };
 export const districtApi = { async list() { return (await apiClient.get("/districts")).data.data; } };
-export const userApi = { async list(params = {}) { return (await apiClient.get("/users", { params })).data; }, async setStatus(id, isActive) { return (await apiClient.patch(`/users/${id}/status`, { isActive })).data.data; } };
+export const userApi = { async list(params = {}) { return (await apiClient.get("/users", { params })).data; }, async create(input) { return (await apiClient.post("/users", input)).data.data; }, async setStatus(id, isActive) { return (await apiClient.patch(`/users/${id}/status`, { isActive })).data.data; } };
 export const ownerApi = {
   async list(params = {}) { return (await apiClient.get("/owners", { params })).data; },
   async get(id) { return (await apiClient.get(`/owners/${id}`)).data.data; },

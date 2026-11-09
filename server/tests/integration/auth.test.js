@@ -72,6 +72,19 @@ describeAuth("authentication and authorization API", () => {
     expect(response.body.user.email).toBe(fixtureUsers.OWNER);
   });
 
+  it("allows an administrator to create a staff account with a hashed password", async () => {
+    const login = await request(app).post("/api/auth/login").send({ email: fixtureUsers.ADMIN, password });
+    const cookies = cookiesFrom(login);
+    const email = `created-surveyor-${Date.now()}@example.com`;
+    const created = await request(app).post("/api/users").set("Cookie", cookies).set("X-CSRF-Token", csrfFrom(cookies)).send({ fullName: "Created Surveyor", email, phone: "+252610123456", role: "SURVEYOR", password });
+    expect(created.status).toBe(201);
+    expect(created.body.data).toMatchObject({ fullName: "Created Surveyor", email, role: "SURVEYOR", isActive: true });
+    expect(JSON.stringify(created.body)).not.toContain("passwordHash");
+    const staffLogin = await request(app).post("/api/auth/login").send({ email, password });
+    expect(staffLogin.status).toBe(200);
+    expect(staffLogin.body.user.role).toBe("SURVEYOR");
+  });
+
   it("rejects a deactivated user even with an unexpired JWT", async () => {
     await prisma.user.update({ where: { id: users.OWNER.id }, data: { isActive: false } });
     const token = jwt.sign({ sub: String(users.OWNER.id) }, process.env.JWT_SECRET, { expiresIn: "1h", issuer: "land-title-registry", audience: "land-title-registry-web" });

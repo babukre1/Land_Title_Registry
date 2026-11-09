@@ -30,28 +30,28 @@ export default function LoginPage() {
 
   return (
     <main className="page-background grid min-h-screen place-items-center px-4 py-12">
-      <div className="w-full max-w-md rounded-3xl border border-white bg-white/90 p-8 shadow-2xl shadow-blue-950/10 sm:p-10">
-        <Link to="/" className="mx-auto grid size-14 place-items-center rounded-2xl bg-blue-950 text-white"><Landmark /></Link>
-        <h1 className="mt-5 text-center text-3xl font-black text-blue-950">Welcome back</h1>
-        <p className="mt-2 text-center text-slate-500">Sign in to the Land Title Registry</p>
+      <div className="ui-card w-full max-w-md p-8 sm:p-10">
+        <Link to="/" className="mx-auto grid size-12 place-items-center rounded-[10px] bg-[#4935ca] text-white"><Landmark /></Link>
+        <h1 className="mt-5 text-center text-[26px] font-extrabold text-[#11172d]">Welcome back</h1>
+        <p className="mt-2 text-center text-sm text-[#647084]">Sign in to the Land Title Registry</p>
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <label className="block text-sm font-semibold text-slate-700">
             Email address
             <span className="relative mt-2 block">
               <Mail className="absolute left-3 top-3.5 text-slate-400" size={18} />
-              <input className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" type="email" autoComplete="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+              <input className="ui-input py-3 pl-10 pr-3" type="email" autoComplete="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
             </span>
           </label>
           <label className="block text-sm font-semibold text-slate-700">
             Password
             <span className="relative mt-2 block">
               <LockKeyhole className="absolute left-3 top-3.5 text-slate-400" size={18} />
-              <input className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-11 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" type={showPassword ? "text" : "password"} autoComplete="current-password" required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+              <input className="ui-input py-3 pl-10 pr-11" type={showPassword ? "text" : "password"} autoComplete="current-password" required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
               <button type="button" aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-3 top-3 text-slate-500" onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
             </span>
           </label>
           {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-          <button disabled={isSubmitting} className="w-full rounded-xl bg-emerald-600 px-5 py-3.5 font-bold text-white hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-70">{isSubmitting ? "Signing in…" : "Sign in"}</button>
+          <button disabled={isSubmitting} className="ui-button-primary w-full py-3">{isSubmitting ? "Signing in…" : "Sign in"}</button>
         </form>
         <Link to="/" className="mt-6 block text-center text-sm font-medium text-slate-500 hover:text-blue-950">← Return to home</Link>
       </div>
