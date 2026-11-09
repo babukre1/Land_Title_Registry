@@ -1,3 +1,4 @@
+/** Role-scoped dashboard summary endpoint backed by database aggregates. */
 import { Router } from "express";
 import { showDashboardSummary } from "../controllers/dashboard.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

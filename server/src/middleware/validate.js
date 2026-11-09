@@ -1,3 +1,4 @@
+/** Validates request body/query/params with Zod, stores parsed data in request.validated, and returns 422 on failure. */
 export function validate(schema, source = "body") {
   return function validateRequest(request, response, next) {
     const result = schema.safeParse(request[source]);

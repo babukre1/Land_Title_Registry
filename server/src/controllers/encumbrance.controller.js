@@ -1,3 +1,4 @@
+/** Encumbrance handlers return authorized restriction history and accept registrar creation/lifting evidence. */
 import { createEncumbrance, getEncumbranceEvidence, liftEncumbrance, listParcelEncumbrances } from "../services/encumbrance.service.js";
 
 export async function indexForParcel(request, response) { response.json({ success: true, data: await listParcelEncumbrances(request.validated.params.id, request.user) }); }

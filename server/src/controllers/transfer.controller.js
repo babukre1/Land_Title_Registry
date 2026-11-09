@@ -1,3 +1,4 @@
+/** Transfer handlers accept participant/staff actions, return transfer state, and propagate service 4xx errors. */
 import { approveTransfer, cancelTransfer, getTransfer, getTransferDocument, initiateTransfer, listTransfers, rejectTransfer, respondAsBuyer, respondToConsent, reviewTransferDocuments, saveTransferDocument, searchBuyers } from "../services/transfer.service.js";
 import { payTransferFee } from "../services/payment.service.js";
 

@@ -1,3 +1,4 @@
+/** Shared same-origin Axios client with credentials, CSRF header injection, timeout, and safe network messages. */
 import axios from "axios";
 
 const apiClient = axios.create({

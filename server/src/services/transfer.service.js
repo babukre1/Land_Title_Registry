@@ -61,6 +61,7 @@ async function assertParticipant(transfer, actor, database) {
   return owner;
 }
 
+/** Starts a whole-parcel sale from the authenticated owner after title, restriction, dispute and concurrency checks. */
 export async function initiateTransfer(input, actor) {
   if (input.transferType !== "SALE") throw httpError("Only whole-parcel SALE transfers are available in Phase 10", 422);
   const prisma = getPrisma();
@@ -108,6 +109,7 @@ export async function getTransfer(id, actor, database = getPrisma()) {
   return { ...serializeTransfer(transfer), timeline, viewerOwnerId: viewerOwner?.id ?? null };
 }
 
+/** Records one required seller's confirm/decline decision and advances or rejects the transfer. */
 export async function respondToConsent(id, decision, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {
@@ -127,6 +129,7 @@ export async function respondToConsent(id, decision, actor) {
   return getTransfer(id, actor);
 }
 
+/** Records the verified buyer's accept/reject decision and advances accepted transfers to clerk review. */
 export async function respondAsBuyer(id, decision, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {
@@ -173,6 +176,7 @@ export async function getTransferDocument(id, documentId, actor) {
   return { ...link.document, buffer: stored || await readFile(link.document.filePath) };
 }
 
+/** Lets a clerk approve complete evidence or return it; approval requires at least one protected document. */
 export async function reviewTransferDocuments(id, input, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {
@@ -203,6 +207,7 @@ export async function rejectTransfer(id, reason, actor) {
   }); return getTransfer(id, actor);
 }
 
+/** Rechecks every legal gate under locks, replaces current ownership, appends history, and starts certificate reissue. */
 export async function approveTransfer(id, actor) {
   const prisma = getPrisma(); let repeated = false; let approvedParcelId;
   await prisma.$transaction(async (transaction) => {

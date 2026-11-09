@@ -1,3 +1,4 @@
+/** Rate-limited public token and manual certificate verification endpoints with privacy-safe responses. */
 import { Router } from "express";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { manualVerification, tokenVerification } from "../controllers/public-verification.controller.js";

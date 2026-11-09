@@ -1,3 +1,4 @@
+/** Administrator user list/detail and activation-status endpoints. */
 import { Router } from "express";
 import { listUsers, setUserStatus, showUser } from "../controllers/user.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

@@ -59,7 +59,11 @@ Open **Application Stack Builder** from the PostgreSQL 17 Start menu, select the
 
 ## Local setup
 
+These steps start from a fresh computer after installing the prerequisites above.
+
 ```powershell
+git clone https://github.com/babukre1/Land_Title_Registry.git
+Set-Location Land_Title_Registry
 npm install
 npm run install:all
 Copy-Item server/.env.example server/.env
@@ -86,12 +90,19 @@ Survey reports and transfer evidence are stored in a private Cloudflare R2 bucke
 Create both databases with your own PostgreSQL administrator account. Do not point `TEST_DATABASE_URL` at development or production; integration tests refuse any database whose name does not end in `_test`.
 
 ```powershell
-Set-Location server
-npm run prisma:validate
-npm run prisma:generate
-npm run prisma:deploy
-npm run db:seed
-npm run prisma:studio
+createdb land_title_registry
+createdb land_title_registry_test
+psql -d land_title_registry -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+psql -d land_title_registry_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+```
+
+Apply migrations, generate the Prisma client, and load the repeatable demo data from the repository root:
+
+```powershell
+npm run prisma:validate --prefix server
+npm run prisma:generate --prefix server
+npm run prisma:deploy --prefix server
+npm run db:seed --prefix server
 ```
 
 For the isolated test database, temporarily set `DATABASE_URL` to the `_test` URL and run `npm run prisma:deploy`. Restore the development URL afterwards.
@@ -129,6 +140,24 @@ The repeatable seed creates these development-only accounts. Every account uses 
 | CLERK | `clerk@example.com` |
 | OWNER | `owner@example.com` |
 | OWNER (buyer demo) | `buyer@example.com` |
+
+## Screenshots
+
+### Role-aware administrator dashboard
+
+![Administrator dashboard with registry statistics and charts](docs/screenshots/dashboard.png)
+
+### Parcel registration and protected parcel map
+
+![Parcel registration screen with the read-only registry map](docs/screenshots/parcel-registration.png)
+
+### Public certificate verification
+
+![Public certificate verification form](docs/screenshots/public-verification.png)
+
+### Secure login
+
+![Land Title Registry login page](docs/screenshots/login.png)
 
 ## Implemented
 
@@ -200,7 +229,7 @@ The database and focused services support these future workflows, but the applic
 - Owner identity and company registration numbers are globally unique in this initial national registry.
 - A boundary correction sets the transaction-local `app.boundary_change_approved` database flag only after surveyor verification, registrar authorization, and a fresh overlap validation.
 
-See [architecture](docs/architecture.md), [database design](docs/database.md), [implemented API](docs/api.md), [registration flow](docs/land-registration-flow.md), [ownership transfer flow](docs/ownership-transfer-flow.md), [certificates](docs/certificates.md), [public verification](docs/public-verification.md), [testing](docs/testing.md), the [demo guide](docs/demo-guide.md), and the [judge guide](docs/judge-guide.md).
+See [architecture](docs/architecture.md), [database design](docs/database.md), [implemented API](docs/api.md), [code module reference](docs/code-reference.md), [submission checklist](docs/submission-checklist.md), [registration flow](docs/land-registration-flow.md), [ownership transfer flow](docs/ownership-transfer-flow.md), [certificates](docs/certificates.md), [public verification](docs/public-verification.md), [testing](docs/testing.md), the [demo guide](docs/demo-guide.md), and the [judge guide](docs/judge-guide.md).
 
 ## Vercel deployment
 

@@ -15,9 +15,9 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | GET | `/api/districts` | Yes | Any active role | Registration district choices |
 | GET | `/api/fees/current` | Yes | Any active role | Current mock-payment fee rule |
 | PUT | `/api/fees/current` | Yes + CSRF | ADMIN | Append a new effective fee rule |
-| GET | `/api/owners` | Yes | CLERK, REGISTRAR | Search/paginate legal owners |
-| GET | `/api/owners/:id` | Yes | CLERK, REGISTRAR | Owner and parcel details |
-| POST | `/api/owners` | Yes + CSRF | CLERK, REGISTRAR | Create person/company owner |
+| GET | `/api/owners` | Yes | CLERK, REGISTRAR, ADMIN | Search/paginate legal owners |
+| GET | `/api/owners/:id` | Yes | CLERK, REGISTRAR, ADMIN | Owner and parcel details |
+| POST | `/api/owners` | Yes + CSRF | CLERK | Create person/company owner |
 | GET | `/api/parcels` | Yes | Any active role | Role-scoped parcel list |
 | GET | `/api/parcels/geojson` | Yes | Any active role | Role-scoped parcel map features |
 | GET | `/api/parcels/:id` | Yes | Any active role | Parcel, owners, surveys, and geometry |
@@ -73,6 +73,44 @@ All responses are JSON. Errors use `{ "success": false, "message": "..." }`. Coo
 | GET | `/api/permissions/surveyor` | Yes | SURVEYOR | Role-boundary demonstration |
 | GET | `/api/permissions/registrar` | Yes | REGISTRAR | Role-boundary demonstration |
 | GET | `/api/permissions/admin` | Yes | ADMIN | Role-boundary demonstration |
+
+## Request and response contracts
+
+Every JSON success response uses `{ "success": true, "data": ... }`; list endpoints may additionally include `pagination: { page, limit, total, pages }`. File-download endpoints return the documented binary MIME type instead. Expected errors use `{ "success": false, "message": "...", "code"?: "...", "errors"?: [...] }` with 401, 403, 404, 409, 422, or 429 as appropriate. Unexpected failures return a generic 500 message. Authenticated state changes require both the session cookie and matching `csrf_token` cookie/`X-CSRF-Token` header.
+
+GET endpoints have no request body. Their supported query parameters appear in the path table above or are pagination/search values (`page`, `limit`, `q`, `status`, `districtId`, `landUse`, `ownerQuery`, `type`, or `parcelNumber`) validated by the route schema. Their `data` value is the resource named in Purpose. The following table documents every state-changing request body and its success data:
+
+| Method and path | Request | Successful `data` |
+|---|---|---|
+| `POST /api/auth/login` | `{ email, password }` | Safe user profile; also sets session and CSRF cookies |
+| `POST /api/auth/logout` | Empty | `{ loggedOut: true }`; clears cookies |
+| `PATCH /api/users/:id/status` | `{ isActive }` | Updated safe user |
+| `PUT /api/fees/current` | `{ percentageRate, minimumFee }` | New effective fee setting |
+| `POST /api/owners` | Person `{ ownerType, fullName, identityNumber, phone?, email?, address? }` or company equivalent | Created owner |
+| `POST /api/parcels/preview` | `{ districtId, areaName, landUse, geometry, owners[], confirmUnusualArea? }` | Validity, authoritative area, warning and conflicts |
+| `POST /api/parcels` | Preview fields plus unique `idempotencyKey` | Created pending parcel; overlap returns structured 409 dispute evidence |
+| `PATCH /api/parcels/:id/correction` | Parcel proposal without idempotency key | Corrected parcel and new survey attempt |
+| `POST /api/parcels/:id/approve` | Empty | Registered parcel; repeated approval is idempotent |
+| `POST /api/parcels/:id/certificates` | Empty | Issued or recovered certificate metadata |
+| `POST /api/parcels/:id/encumbrances` | Mortgage `{ type: "MORTGAGE", bankName, mortgageAmount }` or court hold `{ type: "COURT_HOLD", courtCaseNumber }` | Active encumbrance |
+| `POST /api/encumbrances/:id/lift` | Multipart `reason` and `evidence` | Lifted historical encumbrance |
+| `POST /api/disputes` | `{ description, parcelIds[] }` | Open dispute |
+| `POST /api/disputes/:id/review` | Empty | Under-review dispute |
+| `POST /api/disputes/:id/resolve` | `{ resolution, boundaryChangeParcelIds: [] }` (zero or one parcel) | Resolved dispute and optional correction-survey task |
+| `POST /api/disputes/:id/evidence` | Multipart `evidence` | Protected document metadata |
+| `POST /api/surveys/:id/report` | Multipart `report` | Protected report metadata |
+| `POST /api/surveys/:id/verify` | `{ notes, adjustedBoundary? }` | Verified survey and parcel state |
+| `POST /api/surveys/:id/cannot-verify` | `{ reason }` | Returned survey and parcel state |
+| `POST /api/transfers` | `{ parcelId, buyerOwnerId, transferType: "SALE", declaredPrice }` | Transfer awaiting seller consent |
+| `POST /api/transfers/:id/consent` | `{ decision: "CONFIRMED" | "DECLINED" }` | Updated transfer |
+| `POST /api/transfers/:id/buyer-response` | `{ decision: "ACCEPTED" | "REJECTED" }` | Updated transfer |
+| `POST /api/transfers/:id/documents` | Multipart `document` | Protected document metadata |
+| `POST /api/transfers/:id/clerk-review` | `{ decision: "APPROVED" | "RETURNED", notes }` | Updated transfer |
+| `POST /api/transfers/:id/payment` | `{ paymentMethod, phone }` | Idempotent simulated payment receipt |
+| `POST /api/transfers/:id/cancel` | `{ reason }` | Cancelled transfer |
+| `POST /api/transfers/:id/reject` | `{ reason }` | Rejected transfer |
+| `POST /api/transfers/:id/approve` | Empty | Approved transfer and certificate-recovery state |
+| `POST /api/public/verify` | `{ parcelNumber, certificateNumber }` | Privacy-safe CURRENT, SUPERSEDED, or INVALID result |
 
 ## Examples
 

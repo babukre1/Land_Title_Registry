@@ -1,3 +1,4 @@
+/** Dashboard handler returns the authenticated role's database-derived summary and recent activity. */
 import { getDashboardSummary } from "../repositories/dashboard.repository.js";
 
 export async function showDashboardSummary(request, response) {

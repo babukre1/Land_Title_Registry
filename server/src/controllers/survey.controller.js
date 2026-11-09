@@ -1,3 +1,4 @@
+/** Survey handlers accept validated IDs/evidence/decisions and return metadata, binary reports, or workflow state. */
 import { getPendingSurveys, getSurvey, getSurveyReport, returnSurveyToClerk, saveSurveyReport, verifySurvey } from "../services/survey.service.js";
 
 export async function index(request, response) { const result = await getPendingSurveys(request.validated.query); response.json({ success: true, data: result.surveys, pagination: result.pagination }); }

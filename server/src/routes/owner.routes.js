@@ -1,3 +1,4 @@
+/** Clerk/registrar owner search, detail, and creation endpoints with role and CSRF enforcement. */
 import { Router } from "express";
 import { indexOwners, showOwner, storeOwner } from "../controllers/owner.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

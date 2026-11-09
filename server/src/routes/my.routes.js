@@ -1,3 +1,4 @@
+/** Owner-self-service parcel and transfer endpoints derived from the authenticated linked Owner identity. */
 import { Router } from "express";
 import { parcel, parcels, transfers } from "../controllers/my.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

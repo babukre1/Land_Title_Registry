@@ -1,3 +1,4 @@
+/** Administrator user handlers return safe projections and audited activation/deactivation results. */
 import { changeUserStatus, getUser, getUsers } from "../services/user.service.js";
 
 export async function listUsers(request, response) {

@@ -1,3 +1,4 @@
+/** Fee handlers return the active setting or append an administrator-authorized replacement. */
 import { getCurrentFeeSetting, updateFeeSetting } from "../services/payment.service.js";
 
 export async function showFee(request, response) { response.json({ success: true, data: await getCurrentFeeSetting() }); }

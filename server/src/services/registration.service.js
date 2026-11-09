@@ -6,6 +6,7 @@ import { issueTitleCertificate } from "./certificate.service.js";
 
 const REGISTRY_LOCK_KEY = 8092026;
 
+/** Returns the newest verified parcels/corrections awaiting registrar approval with paginated survey evidence. */
 export async function getPendingRegistrations(query) {
   const prisma = getPrisma();
   const where = { status: "VERIFIED", surveys: { some: { status: "VERIFIED", reportDocumentId: { not: null } } } };

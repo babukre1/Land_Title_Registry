@@ -1,3 +1,4 @@
+/** Encumbrance endpoints for evidence-backed registrar lifting and authorized evidence retrieval. */
 import { Router } from "express";
 import { evidence, lift } from "../controllers/encumbrance.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

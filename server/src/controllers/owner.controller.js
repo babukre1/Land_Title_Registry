@@ -1,3 +1,4 @@
+/** Owner handlers map validated search/create/detail requests to safe owner service results. */
 import { createOwner, getOwner, listOwners } from "../services/owner.service.js";
 
 export async function indexOwners(request, response) {

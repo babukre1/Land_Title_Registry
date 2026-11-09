@@ -33,6 +33,7 @@ function objectKey(category, storedName) {
   return [prefix, category, storedName].filter(Boolean).join("/");
 }
 
+/** Stores private bytes in the test memory adapter or configured R2 bucket and returns an opaque object reference. */
 export async function storeObject({ category, storedName, buffer, mimeType }) {
   const key = objectKey(category, storedName);
   if (process.env.NODE_ENV === "test") {
@@ -44,6 +45,7 @@ export async function storeObject({ category, storedName, buffer, mimeType }) {
   return `${R2_REFERENCE_PREFIX}${key}`;
 }
 
+/** Loads private bytes for an internal object reference; provider/configuration errors propagate to the safe handler. */
 export async function loadObject(reference) {
   if (!reference?.startsWith(R2_REFERENCE_PREFIX)) return null;
   const key = reference.slice(R2_REFERENCE_PREFIX.length);
@@ -58,6 +60,7 @@ export async function loadObject(reference) {
   return Buffer.from(await response.Body.transformToByteArray());
 }
 
+/** Deletes a just-created object during rollback/cleanup; callers must never expose the storage reference publicly. */
 export async function deleteObject(reference) {
   if (!reference?.startsWith(R2_REFERENCE_PREFIX)) return;
   const key = reference.slice(R2_REFERENCE_PREFIX.length);

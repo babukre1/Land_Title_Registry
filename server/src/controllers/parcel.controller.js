@@ -1,3 +1,4 @@
+/** Parcel handlers map validated queries/bodies and authenticated actors to standard JSON/status responses. */
 import { correctReturnedParcel, getParcel, getParcelGeoJson, listParcels, previewParcel, registerParcel } from "../services/parcel.service.js";
 import { approveParcelRegistration } from "../services/registration.service.js";
 import { getCurrentOwners, getOwnershipHistory } from "../services/ownership.service.js";

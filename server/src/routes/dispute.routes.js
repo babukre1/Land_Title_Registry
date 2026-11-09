@@ -1,3 +1,4 @@
+/** Dispute endpoints expose clerk opening/evidence and registrar review/resolution with explicit authorization. */
 import { Router } from "express";
 import { decideDispute, downloadEvidence, indexDisputes, reviewDispute, showDispute, storeDispute, uploadEvidence } from "../controllers/dispute.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

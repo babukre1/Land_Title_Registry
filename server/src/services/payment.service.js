@@ -8,12 +8,14 @@ const PAYMENT_LOCK_KEY = 8092028;
 
 function httpError(message, status = 409) { return Object.assign(new Error(message), { status }); }
 
+/** Loads the newest effective fee setting or throws 503 when the registry has no configuration. */
 export async function getCurrentFeeSetting(database = getPrisma()) {
   const setting = await database.feeSetting.findFirst({ orderBy: [{ updatedAt: "desc" }, { id: "desc" }], select: { id: true, percentageRate: true, minimumFee: true, updatedAt: true } });
   if (!setting) throw httpError("Transfer fee settings are unavailable", 503);
   return setting;
 }
 
+/** Appends an administrator fee setting and immutable audit entry; returns the new effective setting. */
 export async function updateFeeSetting(input, actor) {
   const prisma = getPrisma();
   return prisma.$transaction(async (transaction) => {
@@ -23,6 +25,7 @@ export async function updateFeeSetting(input, actor) {
   });
 }
 
+/** Returns the exact-decimal maximum of percentage fee and configured minimum fee. */
 export function calculateTransferFee(declaredPrice, setting) {
   const percentage = new Prisma.Decimal(declaredPrice).mul(setting.percentageRate).div(100).toDecimalPlaces(2);
   return Prisma.Decimal.max(percentage, setting.minimumFee);

@@ -1,3 +1,4 @@
+/** Dispute handlers translate validated case actions/evidence into JSON or protected binary downloads. */
 import { getDispute, getDisputeEvidence, listDisputes, openManualDispute, resolveDispute, saveDisputeEvidence, startDisputeReview } from "../services/dispute.service.js";
 
 export async function indexDisputes(request, response) {

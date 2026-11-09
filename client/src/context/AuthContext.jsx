@@ -3,6 +3,7 @@ import * as authService from "../services/authService.js";
 
 const AuthContext = createContext(null);
 
+/** Loads the cookie-backed session and exposes safe login/logout state to protected pages. */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

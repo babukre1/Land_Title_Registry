@@ -11,6 +11,7 @@ export function normalizeEmail(email) {
   return email.trim().toLowerCase();
 }
 
+/** Normalizes credentials, verifies bcrypt and active status, audits login, and returns a safe profile plus JWT. */
 export async function authenticateCredentials(email, password) {
   requireAuthEnv();
   const normalizedEmail = normalizeEmail(email);
@@ -31,6 +32,7 @@ export async function authenticateCredentials(email, password) {
   return { token, user: toSafeUser(user) };
 }
 
+/** Verifies a signed authentication token and returns its payload or throws for invalid/expired input. */
 export function verifyAuthToken(token) {
   requireAuthEnv();
   return jwt.verify(token, env.JWT_SECRET, { issuer: "land-title-registry", audience: "land-title-registry-web" });

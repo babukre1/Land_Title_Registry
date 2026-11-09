@@ -1,3 +1,4 @@
+/** Survey endpoints for task reads, protected evidence, field verification, and Cannot Verify decisions. */
 import { Router } from "express";
 import { cannotVerify, downloadReport, index, show, uploadReport, verify } from "../controllers/survey.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

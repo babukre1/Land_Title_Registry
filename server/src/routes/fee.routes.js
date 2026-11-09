@@ -1,3 +1,4 @@
+/** Current fee read and administrator append-only fee update endpoints. */
 import { Router } from "express";
 import { showFee, updateFee } from "../controllers/payment.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

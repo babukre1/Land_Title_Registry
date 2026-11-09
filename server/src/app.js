@@ -23,6 +23,7 @@ import publicVerificationRoutes from "./routes/public-verification.routes.js";
 import feeRoutes from "./routes/fee.routes.js";
 import encumbranceRoutes from "./routes/encumbrance.routes.js";
 
+/** Builds the Express API with security middleware and route ordering; returns a testable app instance. */
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");

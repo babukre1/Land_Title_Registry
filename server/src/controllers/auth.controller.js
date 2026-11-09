@@ -1,3 +1,4 @@
+/** Authentication handlers consume validated credentials/session state, return safe JSON/cookies, and propagate service errors. */
 import { randomBytes } from "node:crypto";
 import { writeAuditLog } from "../services/audit.service.js";
 import { AUTH_COOKIE_NAME, CSRF_COOKIE_NAME, authCookieOptions, authenticateCredentials, csrfCookieOptions } from "../services/auth.service.js";

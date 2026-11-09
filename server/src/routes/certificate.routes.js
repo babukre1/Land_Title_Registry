@@ -1,3 +1,4 @@
+/** Authenticated certificate listing, metadata, and protected bilingual PDF download endpoints. */
 import { Router } from "express";
 import { download, index, show } from "../controllers/certificate.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

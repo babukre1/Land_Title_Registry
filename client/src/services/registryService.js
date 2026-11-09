@@ -1,3 +1,4 @@
+/** Browser-facing registry API methods; each returns parsed resource data or propagates the normalized Axios error. */
 import apiClient from "./apiClient.js";
 
 export const dashboardApi = { async summary() { return (await apiClient.get("/dashboard/summary")).data.data; } };

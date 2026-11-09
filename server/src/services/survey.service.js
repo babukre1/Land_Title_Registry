@@ -44,6 +44,7 @@ export async function getSurvey(id) {
   return { ...survey, ...(await geometryForSurvey(id, prisma)) };
 }
 
+/** Validates and privately stores survey evidence; returns document metadata or 404/409/422 for invalid survey/file state. */
 export async function saveSurveyReport(id, file, actor) {
   if (!file) throw Object.assign(new Error("A survey report file is required"), { status: 422 });
   assertSignature(file);
@@ -92,6 +93,7 @@ async function preserveAdjustmentConflict(transaction, survey, geometry, areaM2,
 }
 
 /** Verifies a pending survey and atomically stores the exact approved field boundary. */
+/** Verifies field evidence and optional adjusted geometry, rechecks overlap, and returns updated survey/parcel state. */
 export async function verifySurvey(id, input, actor) {
   const prisma = getPrisma();
   const result = await prisma.$transaction(async (transaction) => {
@@ -117,6 +119,7 @@ export async function verifySurvey(id, input, actor) {
   return getSurvey(id);
 }
 
+/** Records why a survey cannot be verified and returns the application for clerk correction without deleting attempts. */
 export async function returnSurveyToClerk(id, reason, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {

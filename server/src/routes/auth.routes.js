@@ -1,3 +1,4 @@
+/** Authentication endpoints for login, current-session lookup, and audited logout. */
 import { Router } from "express";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { login, logout, me } from "../controllers/auth.controller.js";

@@ -26,6 +26,7 @@ function MapViewport({ data }) {
   return null;
 }
 
+/** Displays role-scoped parcels/proposals/conflicts with status styling, safe popups, and fitted bounds. */
 export default function ParcelMap({ parcels, proposedGeometry, conflicts = [], className = "h-96" }) {
   const features = parcels?.features || [];
   const viewportData = { type: "FeatureCollection", features: [...features, ...(proposedGeometry ? [{ type: "Feature", geometry: proposedGeometry, properties: {} }] : []), ...conflicts.filter((item) => item.geometry).map((item) => ({ type: "Feature", geometry: item.geometry, properties: {} }))] };

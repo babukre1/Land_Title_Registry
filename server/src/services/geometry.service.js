@@ -29,6 +29,7 @@ function geoJsonText(geometry) {
   return JSON.stringify(normalizePolygon(geometry));
 }
 
+/** Validates bound GeoJSON as a simple SRID-4326 polygon; returns PostGIS facts and never interpolates user SQL. */
 export async function validatePolygon(geometry, database = getPrisma()) {
   const input = geoJsonText(geometry);
   const [result] = await database.$queryRaw`
@@ -40,6 +41,7 @@ export async function validatePolygon(geometry, database = getPrisma()) {
   return { isValid: result.isValid && result.cornerCount >= 3, reason: result.cornerCount < 3 ? "Polygon requires at least three corners" : result.reason, cornerCount: result.cornerCount };
 }
 
+/** Calculates authoritative geodesic square metres for GeoJSON; throws when PostGIS cannot construct the polygon. */
 export async function calculateAreaM2(geometry, database = getPrisma()) {
   const input = geoJsonText(geometry);
   const [result] = await database.$queryRaw`
@@ -65,6 +67,7 @@ export async function calculateOverlapM2(firstGeometry, secondGeometry, database
   return { intersects: result.intersects, overlapM2: Number(result.overlapM2) };
 }
 
+/** Returns every protected parcel overlapping the input by more than 1 m², optionally excluding one parcel ID. */
 export async function findParcelOverlaps(geometry, excludedParcelId = null, database = getPrisma()) {
   const input = geoJsonText(geometry);
   return database.$queryRaw`

@@ -1,6 +1,7 @@
 import { findActiveUserById, toSafeUser } from "../repositories/user.repository.js";
 import { AUTH_COOKIE_NAME, verifyAuthToken } from "../services/auth.service.js";
 
+/** Verifies the session cookie, reloads the active user into request.user, or responds with 401. */
 export async function authenticate(request, response, next) {
   const token = request.cookies?.[AUTH_COOKIE_NAME];
   if (!token) return response.status(401).json({ success: false, message: "Authentication required" });

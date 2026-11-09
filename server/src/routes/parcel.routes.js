@@ -1,3 +1,4 @@
+/** Parcel endpoints for read-only maps, proposals, corrections, approval, restrictions, certificates, owners, and history. */
 import { Router } from "express";
 import { approve, correct, geojson, history, index, owners, preview, show, store } from "../controllers/parcel.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

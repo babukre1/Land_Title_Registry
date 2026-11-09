@@ -1,3 +1,4 @@
+/** Registrar queue endpoint for verified initial registrations and protected boundary corrections. */
 import { Router } from "express";
 import { pending } from "../controllers/registration.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

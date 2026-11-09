@@ -69,6 +69,7 @@ function DrawingControls({ value, onChange }) {
   return null;
 }
 
+/** Renders existing parcels as a separate read-only layer and exposes only the proposed polygon through onChange. */
 export default function ParcelDrawingMap({ value, onChange, existingParcels = { type: "FeatureCollection", features: [] } }) {
   return <div className="h-[28rem] overflow-hidden rounded-2xl border border-slate-200"><MapContainer center={MOGADISHU} zoom={14} className="h-full w-full"><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />{existingParcels.features.map((feature) => <GeoJSON key={`existing-${feature.properties.id}-${feature.properties.status}`} data={feature} style={() => ({ color: colors[feature.properties.status] || "#64748b", weight: 2, fillOpacity: 0.2 })} onEachFeature={(item, layer) => layer.bindPopup(existingParcelPopup(item))} />)}<DrawingControls value={value} onChange={onChange} /><ExistingParcelViewport parcels={existingParcels} /><MapLegend /></MapContainer></div>;
 }

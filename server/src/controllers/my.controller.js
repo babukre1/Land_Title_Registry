@@ -1,3 +1,4 @@
+/** Owner-self-service handlers derive legal identity from authentication and return only owned parcels/transfers. */
 import { getParcelOwnedByUser, getParcelsOwnedByUser } from "../services/ownership.service.js";
 import { getMyTransfers } from "../services/transfer.service.js";
 

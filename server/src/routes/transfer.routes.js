@@ -1,3 +1,4 @@
+/** Transfer endpoints declare participant actions, evidence, review, mock payment, cancellation, rejection, and approval gates. */
 import { Router } from "express";
 import { approve, buyerResponse, buyers, cancel, clerkReview, consent, downloadDocument, index, payFee, reject, show, store, uploadDocument } from "../controllers/transfer.controller.js";
 import { authenticate } from "../middleware/authenticate.js";

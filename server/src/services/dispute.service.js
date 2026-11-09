@@ -58,6 +58,7 @@ export async function getDispute(id) {
   return { ...dispute, documents: dispute.documents.map(({ document }) => document), proposedGeometry: candidateGeometry?.geometry ?? null, conflicts };
 }
 
+/** Opens a clerk-recorded parcel dispute, snapshots parties, and blocks affected legal workflows until resolution. */
 export async function openManualDispute(input, actor) {
   const prisma = getPrisma();
   return prisma.$transaction(async (transaction) => {
@@ -71,6 +72,7 @@ export async function openManualDispute(input, actor) {
   }).then((id) => getDispute(id));
 }
 
+/** Moves an OPEN dispute to UNDER_REVIEW and audits the registrar action; rejects missing or stale cases. */
 export async function startDisputeReview(id, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {
@@ -83,6 +85,7 @@ export async function startDisputeReview(id, actor) {
   return getDispute(id);
 }
 
+/** Records a reviewed outcome and optionally creates one protected boundary-correction survey without editing title geometry. */
 export async function resolveDispute(id, input, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {
@@ -103,6 +106,7 @@ export async function resolveDispute(id, input, actor) {
   return getDispute(id);
 }
 
+/** Signature-validates and stores private case evidence; returns metadata or 404/409/422 for invalid state/input. */
 export async function saveDisputeEvidence(id, file, actor) {
   if (!file) throw httpError("An evidence file is required", 422);
   assertSignature(file);

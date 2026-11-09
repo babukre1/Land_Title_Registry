@@ -31,6 +31,7 @@ const messages = {
 
 const LanguageContext = createContext(null);
 
+/** Stores the selected English/Somali locale and provides shared interface/status translation. */
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(() => localStorage.getItem("ltr_language") || "en");
   const value = useMemo(() => ({

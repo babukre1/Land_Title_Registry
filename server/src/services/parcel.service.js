@@ -38,6 +38,7 @@ async function inspectProposal(input, database) {
   return { geometry, areaM2, warning: areaWarning(areaM2), conflicts };
 }
 
+/** Validates references, shares, geometry, area and conflicts without writing; returns an authoritative preview or 4xx error. */
 export async function previewParcel(input) {
   const prisma = getPrisma();
   await loadRegistrationReferences(prisma, input.districtId, input.owners);
@@ -126,6 +127,7 @@ export async function getParcel(id, user) {
   return parcel;
 }
 
+/** Returns role-scoped parcel GeoJSON with safe owner display names for read-only registry maps. */
 export async function getParcelGeoJson(user) {
   const prisma = getPrisma();
   const owner = user.role === "OWNER" ? await prisma.owner.findUnique({ where: { userId: user.id }, select: { id: true } }) : null;
@@ -153,6 +155,7 @@ export async function getParcelGeoJson(user) {
 }
 
 /** Revalidates an unapproved returned parcel and creates a fresh survey attempt. */
+/** Revalidates a returned application, replaces only its proposed data, and creates a fresh survey attempt atomically. */
 export async function correctReturnedParcel(id, input, actor) {
   const prisma = getPrisma();
   await prisma.$transaction(async (transaction) => {

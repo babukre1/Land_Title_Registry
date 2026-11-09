@@ -1,3 +1,4 @@
+/** Certificate handlers issue/list/show metadata and stream authorized English/Somali PDFs. */
 import { downloadCertificate, getCertificate, issueTitleCertificate, listCertificates, listParcelCertificates } from "../services/certificate.service.js";
 
 export async function issue(request, response) { response.status(201).json({ success: true, data: await issueTitleCertificate(request.validated.params.id, request.user) }); }

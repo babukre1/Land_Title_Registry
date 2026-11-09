@@ -82,6 +82,7 @@ async function preparePendingCertificate(parcelId, registrar) {
   });
 }
 
+/** Locks an eligible registered parcel, snapshots title facts, renders/stores bilingual PDFs, and promotes one CURRENT certificate. */
 export async function issueTitleCertificate(parcelId, registrar) {
   const prisma = getPrisma();
   const pending = await preparePendingCertificate(parcelId, registrar);
@@ -130,6 +131,7 @@ export async function getCertificate(id, actor) {
   return { ...safeCertificate, verificationUrl: verificationUrl(verificationToken) };
 }
 
+/** Authorizes staff/current ownership and returns the requested English or Somali PDF bytes and metadata. */
 export async function downloadCertificate(id, actor, language) {
   const certificate = await getCertificate(id, actor);
   const buffer = await generateCertificatePdf({
@@ -168,11 +170,13 @@ async function publicResult(certificate) {
   };
 }
 
+/** Resolves an opaque QR token to a privacy-safe CURRENT/SUPERSEDED result or generic INVALID response. */
 export async function verifyByToken(token) {
   const certificate = await getPrisma().certificate.findUnique({ where: { verificationToken: token } });
   return publicResult(certificate);
 }
 
+/** Performs privacy-safe public verification by normalized parcel/certificate numbers without authentication. */
 export async function verifyManually(parcelNumber, certificateNumber) {
   const certificate = await getPrisma().certificate.findFirst({ where: { certificateNumber, parcel: { parcelNumber } } });
   return publicResult(certificate);

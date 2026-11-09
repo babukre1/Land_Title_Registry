@@ -61,6 +61,7 @@ function drawBoundary(doc, geometry, x, y, width, height) {
   doc.moveTo(northX, northY + 2).lineTo(northX - 3, northY + 6).lineTo(northX + 3, northY + 6).closePath().fill("#0f172a");
 }
 
+/** Renders one immutable title snapshot, vector boundary and QR URL to an English or Somali PDF buffer. */
 export async function generateCertificatePdf({ certificateNumber, status, snapshot, language = "en", verificationUrl }) {
   const text = labels[language] || labels.en;
   const qr = await QRCode.toBuffer(verificationUrl, { type: "png", width: 120, margin: 1, errorCorrectionLevel: "M" });

@@ -29,6 +29,7 @@ import CertificateDetailPage from "./pages/CertificateDetailPage.jsx";
 import PublicVerificationPage from "./pages/PublicVerificationPage.jsx";
 import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
 
+/** Declares every public/protected SPA route and the role-aware dashboard shell. */
 export default function App() {
   return (
     <Routes>

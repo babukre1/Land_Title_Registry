@@ -29,6 +29,7 @@ async function assertAccess(parcelId, actor, database) {
   if (!link) throw httpError("You do not have permission to view these restrictions", 403);
 }
 
+/** Lists active and lifted restrictions for authorized staff/current owners; throws 403/404 for invalid access. */
 export async function listParcelEncumbrances(parcelId, actor) {
   const prisma = getPrisma();
   const parcel = await prisma.parcel.findUnique({ where: { id: parcelId }, select: { id: true } });
@@ -37,6 +38,7 @@ export async function listParcelEncumbrances(parcelId, actor) {
   return prisma.encumbrance.findMany({ where: { parcelId }, select, orderBy: [{ status: "asc" }, { createdAt: "desc" }] });
 }
 
+/** Creates a registrar-authorized mortgage or court hold on a registered parcel and writes audit evidence. */
 export async function createEncumbrance(parcelId, input, actor) {
   const prisma = getPrisma();
   return prisma.$transaction(async (transaction) => {
@@ -54,6 +56,7 @@ export async function createEncumbrance(parcelId, input, actor) {
   });
 }
 
+/** Lifts—not deletes—an active restriction after validating signed evidence and reason; retains protected history. */
 export async function liftEncumbrance(id, reason, file, actor) {
   if (!file) throw httpError("Supporting evidence is required to lift an encumbrance", 422);
   assertSignature(file);

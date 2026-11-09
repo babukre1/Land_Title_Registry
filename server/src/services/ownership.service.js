@@ -3,6 +3,7 @@ import { getPrisma } from "../lib/prisma.js";
 
 const STAFF_ROLES = new Set(["CLERK", "REGISTRAR", "ADMIN"]);
 
+/** Requires unique positive decimal shares totaling exactly 100.00; returns true or throws 422. */
 export function validateOwnershipShares(owners) {
   if (!Array.isArray(owners) || owners.length === 0) {
     throw Object.assign(new Error("At least one owner is required"), { status: 422 });
@@ -20,6 +21,7 @@ export function validateOwnershipShares(owners) {
   return true;
 }
 
+/** Resolves a login user to its legal Owner identity or throws 403 when the account is not linked. */
 export async function getLinkedOwner(userId, database = getPrisma()) {
   const owner = await database.owner.findUnique({ where: { userId }, select: { id: true, ownerType: true, fullName: true, companyName: true } });
   if (!owner) throw Object.assign(new Error("Your account is not linked to a verified owner record"), { status: 403 });
@@ -39,6 +41,7 @@ async function assertOwnershipAccess(parcelId, actor, database) {
   return parcel;
 }
 
+/** Returns current official owners to authorized staff/current owners; rejects pending title and unauthorized access. */
 export async function getCurrentOwners(parcelId, actor, database = getPrisma()) {
   await assertOwnershipAccess(parcelId, actor, database);
   const owners = await database.parcelOwner.findMany({
@@ -49,6 +52,7 @@ export async function getCurrentOwners(parcelId, actor, database = getPrisma()) 
   return owners.map(({ owner, sharePercent }) => ({ ...owner, displayName: owner.fullName || owner.companyName, sharePercent: sharePercent.toFixed(2) }));
 }
 
+/** Returns the append-only legal timeline after the same title access checks as current-owner reads. */
 export async function getOwnershipHistory(parcelId, actor, database = getPrisma()) {
   await assertOwnershipAccess(parcelId, actor, database);
   return database.ownershipHistory.findMany({
